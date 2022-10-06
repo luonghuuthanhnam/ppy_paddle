@@ -1,5 +1,5 @@
 Global:
-  use_gpu: False
+  use_gpu: True
   epoch_num: &epoch_num 200
   log_smooth_window: 10
   print_batch_step: 10
@@ -11,7 +11,7 @@ Global:
   save_inference_dir:
   use_visualdl: False
   seed: 2022
-  infer_img: train_data\kie_discharge_paper\val\image\4.jpeg
+  infer_img: train_data/kie_discharge_paper/val/image/4.jpeg
   # if you want to predict using the groundtruth ocr info,
   # you can use the following config
   # infer_img: train_data/XFUND/zh_val/val.json
@@ -31,7 +31,7 @@ Architecture:
     checkpoints:
     # one of base or vi
     mode: vi
-    num_classes: &num_classes 7
+    num_classes: &num_classes 15
 
 Loss:
   name: VQASerTokenLayoutLMLoss
@@ -53,7 +53,7 @@ Optimizer:
     
 PostProcess:
   name: VQASerTokenLayoutLMPostProcess
-  class_path: &class_path train_data\kie_discharge_paper\class_list_discharge_paper.txt
+  class_path: &class_path train_data/kie_discharge_paper/class_list_discharge_paper.txt
 
 Metric:
   name: VQASerTokenMetric
@@ -62,9 +62,9 @@ Metric:
 Train:
   dataset:
     name: SimpleDataSet
-    data_dir: train_data\kie_discharge_paper\train\image
+    data_dir: train_data/kie_discharge_paper/train/image
     label_file_list: 
-      - train_data\kie_discharge_paper\train\train.json
+      - train_data/kie_discharge_paper/train/train.json
     ratio_list: [ 1.0 ]
     transforms:
       - DecodeImage: # load image
@@ -101,9 +101,9 @@ Train:
 Eval:
   dataset:
     name: SimpleDataSet
-    data_dir: train_data\kie_discharge_paper\val\image
+    data_dir: train_data/kie_discharge_paper/val/image
     label_file_list:
-      - train_data\kie_discharge_paper\val\val.json
+      - train_data/kie_discharge_paper/val/val.json
     transforms:
       - DecodeImage: # load image
           img_mode: RGB
