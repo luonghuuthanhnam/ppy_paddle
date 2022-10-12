@@ -2,7 +2,7 @@ Global:
   use_gpu: true
   epoch_num: 500
   log_smooth_window: 50
-  print_batch_step: 50
+  print_batch_step: 25
   save_model_dir: ./output/det_r50_vd/
   save_epoch_step: 100
   # evaluation is run every 2000 iterations
@@ -97,7 +97,7 @@ Train:
   loader:
     shuffle: True
     drop_last: False
-    batch_size_per_card: 16
+    batch_size_per_card: 4
     num_workers: 4
 
 Eval:
