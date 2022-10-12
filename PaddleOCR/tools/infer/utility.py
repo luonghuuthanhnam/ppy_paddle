@@ -146,7 +146,7 @@ def init_args():
 
 def parse_args():
     parser = init_args()
-    return parser.parse_args()
+    return parser.parse_args(args=[])
 
 
 def create_predictor(args, mode, logger):

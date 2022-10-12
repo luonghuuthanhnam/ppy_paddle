@@ -24,7 +24,7 @@ class LineDetInfer():
         image_file_list = get_image_file_list(self.args.image_dir)
         count = 0
         total_time = 0
-        draw_img_save = "./inference_results"
+        draw_img_save = "./PaddleOCR/inference_results"
 
         if self.args.warmup:
             img = np.random.uniform(0, 255, [640, 640, 3]).astype(np.uint8)
@@ -62,7 +62,7 @@ class LineDetInfer():
         with open(os.path.join(draw_img_save, "det_results.txt"), 'w') as f:
             f.writelines(save_results)
             f.close()
-        if self.sargs.benchmark:
+        if self.args.benchmark:
             self.text_detector.autolog.report()
 
     def line_det_infer(self, image_file_path, draw_result = False):
@@ -95,16 +95,7 @@ class LineDetInfer():
                 cv2.imwrite(img_path, src_im)
                 logger.info("The visualized image saved in {}".format(img_path))
                 
-                
-
                 with open(os.path.join(draw_img_save, "det_results.txt"), 'w') as f:
                     f.writelines(save_pred)
                     f.close()
             return dt_boxes, _
-
-lineDetInfer = LineDetInfer()
-# lineDetInfer.line_det_multi_inference()
-dt_boxes, _  = lineDetInfer.line_det_infer(r"D:\PPYCode\OCR\ppy_paddle\PaddleOCR\img_file\test.jpg")
-print(dt_boxes)
-print("-------FFFFFFFFFFFFFFFFFFFFFFF----")
-print(_)
