@@ -18,7 +18,7 @@ import subprocess
 python_path = sys.executable
 
 ori_path = os.getcwd()
-os.chdir('ppocr/postprocess/pse_postprocess/pse')
+os.chdir("/".join(__file__.split("/")[:-1]))
 if subprocess.call(
         '{} setup.py build_ext --inplace'.format(python_path), shell=True) != 0:
     raise RuntimeError(

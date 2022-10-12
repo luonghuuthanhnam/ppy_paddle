@@ -1,12 +1,12 @@
 Global:
   use_gpu: true
-  epoch_num: 1200
-  log_smooth_window: 20
-  print_batch_step: 10
+  epoch_num: 500
+  log_smooth_window: 50
+  print_batch_step: 50
   save_model_dir: ./output/det_r50_vd/
-  save_epoch_step: 1200
+  save_epoch_step: 100
   # evaluation is run every 2000 iterations
-  eval_batch_step: [0,2000]
+  eval_batch_step: [0,250]
   cal_metric_during_train: False
   pretrained_model: ./pretrain_models/ResNet50_vd_ssld_pretrained
   checkpoints:
@@ -61,9 +61,9 @@ Metric:
 Train:
   dataset:
     name: SimpleDataSet
-    data_dir: ./train_data/icdar2015/text_localization/
-    label_file_list:
-      - ./train_data/icdar2015/text_localization/train_icdar2015_label.txt
+    data_dir: ./train_data/det/
+    label_file_list: 
+      - ./train_data/det/test/train_label.txt
     ratio_list: [1.0]
     transforms:
       - DecodeImage: # load image
@@ -103,9 +103,9 @@ Train:
 Eval:
   dataset:
     name: SimpleDataSet
-    data_dir: ./train_data/icdar2015/text_localization/
-    label_file_list:
-      - ./train_data/icdar2015/text_localization/test_icdar2015_label.txt
+    data_dir: ./train_data/det/
+    label_file_list: 
+      - ./train_data/det/test/eval_label.txt
     transforms:
       - DecodeImage: # load image
           img_mode: BGR
