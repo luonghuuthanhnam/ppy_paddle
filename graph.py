@@ -21,14 +21,14 @@ class Grapher:
         self.filename = filename
         self.data_fd = data_fd
 
-        file_path = os.path.join(self.data_fd, "data/multi_box_data/excel_label", filename + '.xlsx')
-        interim_path = os.path.join(self.data_fd, "data/multi_box_data/excel_label", filename + '.xlsx')
+        file_path = os.path.join(self.data_fd, r"D:\PPYCode\OCR\ppy_paddle\temp_data\temp_gcn\csv", filename + '.xlsx')
+        interim_path = os.path.join(self.data_fd, r"D:\PPYCode\OCR\ppy_paddle\temp_data\temp_gcn\csv", filename + '.xlsx')
 
 
         # file_path = os.path.join(self.data_fd, "data/multi_box_data/interim", filename + '.csv')
         # interim_path = os.path.join(self.data_fd, "data/multi_box_data/interim", filename + '.csv')
 
-        image_path = os.path.join(self.data_fd, "data/multi_box_data/img", filename + '.jpeg')
+        image_path = os.path.join(self.data_fd, r"D:\PPYCode\OCR\ppy_paddle\temp_data\temp_gcn\img", filename + '.jpg')
         # self.df = pd.read_csv(file_path, header=None, sep='\n')
         self.df = pd.read_excel(file_path, index_col=0)
         self.image = cv2.imread(image_path)
@@ -143,8 +143,7 @@ class Grapher:
 
         df2 = pd.DataFrame({'words_indices': master, 'line_number':[x for x in range(1,len(master)+1)]})
         #explode the list columns eg : [1,2,3]
-        df2 = df2.set_index('line_number').words_indices.apply(pd.Series).stack()\
-                .reset_index(level=0).rename(columns={0:'words_indices'})
+        df2 = df2.set_index('line_number').words_indices.apply(pd.Series).stack().reset_index(level=0).rename(columns={0:'words_indices'})
         df2['words_indices'] = df2['words_indices'].astype('int')
         #put the line numbers back to the list
         final = df.merge(df2, left_on=df.index, right_on='words_indices')

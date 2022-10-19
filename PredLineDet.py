@@ -19,7 +19,7 @@ class LineDetInfer():
         self.text_detector = predict_det.TextDetector(self.args)
 
 
-    def line_det_multi_inference(self, image_dir = "PaddleOCR/img_file"):
+    def line_det_multi_inference(self, image_dir = "./PaddleOCR/img_file"):
         image_file_list = get_image_file_list(image_dir)
         count = 0
         total_time = 0

@@ -78,3 +78,9 @@ class PreprocessImage():
             return image_pil, median_angle
         else:
             return rotated_image, median_angle
+
+    def __call__(self, raw_img) -> np.array:
+        img = raw_img.copy()
+        img, ratio = self.resize_image(input_image=img)
+        img, median_angle = self.auto_rotate(input_image=img)
+        return img

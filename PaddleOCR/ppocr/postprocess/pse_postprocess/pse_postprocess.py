@@ -24,8 +24,9 @@ import numpy as np
 import cv2
 import paddle
 from paddle.nn import functional as F
+from PaddleOCR.ppocr.postprocess.pse_postprocess.pse import pse
 
-from ppocr.postprocess.pse_postprocess.pse import pse
+# from ppocr.postprocess.pse_postprocess.pse import pse
 
 
 class PSEPostProcess(object):
