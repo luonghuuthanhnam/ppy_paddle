@@ -1,26 +1,22 @@
 import cv2
-import numpy as np
-from PIL import Image
-
-import importlib
-
-import py_vncorenlp
-import torch
-from transformers import AutoModel, AutoTokenizer
 
 import preprocess_img
 import LineOCR
-importlib.reload(LineOCR)
-
 import pandas as pd
-
-import graph
-from torch_geometric.utils.convert import from_networkx
-import torch_geometric
-importlib.reload(graph)
-
-import torch.nn as nn
-from torch_geometric.nn import ChebConv, GCNConv
-import torch.nn.functional as F
-
 import numpy as np
+import kie_gcn
+from kie_gcn import InvoiceGCN
+
+
+
+preprocessImage = preprocess_img.PreprocessImage()
+lineDetAndOCR = LineOCR.ProcessImage()
+kieGCN = kie_gcn.KieGCN()
+
+test_img = cv2.imread(r"imgs_test\705.jpeg")
+test_img = preprocessImage(test_img)
+
+result = lineDetAndOCR.begin_recognize_text(test_img)
+kie_df = kieGCN(result, test_img)
+
+kie_df.to_excel("result.xlsx")

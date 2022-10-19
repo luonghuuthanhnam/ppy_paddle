@@ -96,7 +96,6 @@ class KieGCN():
             "n_special",
         ]
         os.chdir('../../../')
-        print(os.getcwd())
         self.gcn_model = torch.load(gcn_model_path)
         self.gcn_model.to(self.device)
 
