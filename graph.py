@@ -17,18 +17,18 @@ class Grapher:
     Inputs: The class consists of a pandas dataframe consisting of cordinates for bounding boxe and the image of the invoice/receipt. 
 
     """
-    def __init__(self, filename, data_fd = ""):
+    def __init__(self, filename, data_fd = "./temp_data/temp_gcn"):
         self.filename = filename
         self.data_fd = data_fd
 
-        file_path = os.path.join(self.data_fd, r"D:\PPYCode\OCR\ppy_paddle\temp_data\temp_gcn\csv", filename + '.xlsx')
-        interim_path = os.path.join(self.data_fd, r"D:\PPYCode\OCR\ppy_paddle\temp_data\temp_gcn\csv", filename + '.xlsx')
+        file_path = os.path.join(self.data_fd, "csv", filename + '.xlsx')
+        interim_path = os.path.join(self.data_fd, "csv", filename + '.xlsx')
 
 
         # file_path = os.path.join(self.data_fd, "data/multi_box_data/interim", filename + '.csv')
         # interim_path = os.path.join(self.data_fd, "data/multi_box_data/interim", filename + '.csv')
 
-        image_path = os.path.join(self.data_fd, r"D:\PPYCode\OCR\ppy_paddle\temp_data\temp_gcn\img", filename + '.jpg')
+        image_path = os.path.join(self.data_fd, "img", filename + '.jpg')
         # self.df = pd.read_csv(file_path, header=None, sep='\n')
         self.df = pd.read_excel(file_path, index_col=0)
         self.image = cv2.imread(image_path)

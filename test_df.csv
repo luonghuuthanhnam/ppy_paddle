@@ -1,34 +1,36 @@
 ,xmin,ymin,xmax,ymax,Object,labels
-0,290,34,725,59,CÔNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM,None
-1,811,37,912,54,MS:01/BV-01,None
-2,69,40,218,61,SỞ Y TẾ THANH HÓA,None
-3,812,59,953,80,Số lưu trữ: 2206586,None
-4,378,62,635,86,Độc lập - Tự do - Hạnh phúc,None
-5,42,63,243,85,BỆNH VIỆN ĐA KHOA TỈNH,None
-6,812,84,975,104,Mã Y tế: 38/280/2022,None
-7,41,89,252,112,Khoa Nội Thận - Tiết Niệu,None
-8,401,115,609,146,GIẤY RA VIỆN,None
-9,38,161,426,183,- Họ tên người bệnh: NGUYỄN THỊ HỒNG MAI,None
-10,575,162,642,183,Tuổi: 29,None
-11,730,162,836,183,Giới tính: Nữ,None
-12,36,195,154,213,- Dân tộc: Kinh,None
-13,574,195,725,216,Nghề nghiệp: Khác,None
-14,34,225,263,245,- Mã số BHXH/Thẻ BHYT số:,None
-15,308,225,462,246,GD4383822386956,None
-16,33,253,610,280,"- Địa chỉ: Nhân Trạch, Xã Hoằng Đạo, Huyện Hoằng Hóa, Tỉnh Thanh Hóa",None
-17,33,286,482,310,"- Vào viện lúc: 20 giờ 10 phút, ngày 19 tháng 01 năm 2022",None
-18,31,317,472,343,"- Ra viện lúc: 15 giờ 00 phút, ngày 27 tháng 01 năm 2022",None
-19,30,348,126,371,- Chẩn đoán:,None
-20,91,376,487,400,"+ Bệnh chính: N18.5 - Suy thận mạn, giai đoạn 5",None
-21,89,406,987,437,"+ Bệnh kèm theo: A41 - Nhiễm trùng khác,D64 - Các thiếu máu khác; 882 - Các thuyên tắc và huyết khối tỉnh mạch",None
-22,88,431,247,452,khác; R64 - Suy mòn,None
-23,90,454,211,472,+ Mô tả chi tiết:,None
-24,27,480,435,508,- Phương pháp điều trị: Truyền dịch - Lợi tiểu - hạ áp,None
-25,25,510,862,547,- Ghi chú: Ra viện uống thuốc theo đơn đã làm xết nghiêm SáRS-Cov-2 âm tính ngày 20/1-23/1-24/1-26/1,None
-26,89,554,307,578,Ngày 27 tháng 01 năm 2022,None
-27,608,561,833,584,Ngày 27 tháng 01 năm 2022,None
-28,80,574,314,605,TL.THỔ TRƯỞNG ĐƠN VỊ,None
-29,630,590,797,612,TRƯỞNG KHOA,None
-30,137,613,266,635,Ký tên đóng dâu),None
-31,657,679,915,734,Ths.BS. Đào Thị Nga,None
-32,110,710,362,761,Ths.BS: Đào Thị Nga,None
+0,128,43,343,70,BỆNH VIỆN QUÂN Y 211,None
+1,749,46,850,65,MS: 01/BV-01,None
+2,343,46,702,68,CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM,None
+3,750,65,905,86,Số bệnh án: 22.006530,None
+4,159,66,294,85,Khoa T-M-H (B9),None
+5,423,66,638,87,Độc lập - Tự do - Hạnh phúc,None
+6,751,85,943,106,Mã y tế: BV_211.22011209,None
+7,439,109,611,137,GIẤY RA VIỆN,None
+8,76,134,225,156,- Họ tên người bệnh:,None
+9,263,135,487,156,NGUYỄN THỊ THU HƯỜNG,None
+10,671,137,784,157,Năm sinh: 2009,None
+11,828,138,923,156,Giới tính: Nữ,None
+12,72,158,191,179,- Dân tộc : Kinh,None
+13,537,166,771,187,"Nghề nghiệp: Sinh viên, học sinh",None
+14,72,181,376,203,- Thẻ BHYT số: HS464642190886964002,None
+15,738,183,858,204,đến 31/12/2022,None
+16,627,187,694,204,1/1/2022,None
+17,542,187,609,205,giá trị từ:,None
+18,70,204,574,227,"Địa chỉ: Thôn Ia Lôk, Xã Ia Mơ Nông, Huyện Chư Păh, Tỉnh Gia Lai",None
+19,69,219,180,247,- Vào viện lúc:,None
+20,213,224,246,243,09,None
+21,271,225,605,246,"giờ 54 phút, ngày 11 tháng 07 năm 2022",None
+22,217,229,605,265,"08 giờ 50 phút, ngày 26 tháng 07 năm 2022",None
+23,68,241,169,261,- Ra viện lúc:,None
+24,67,261,542,286,- Chẩn đoán: Viêm tai giữa xuất tiết thanh dịch cấp tính bên trái,None
+25,65,303,634,330,"- Phương pháp điều trị - Kháng sinh, Corticoid, Vitamin, làm thuốc tai trái",None
+26,62,341,483,366,"- Ghị chú: -Toàn trạng ổn định, không sốt, ăn ngủ được.",None
+27,68,361,581,387,"- Hết đau đầu, hết đau tức tai trái, ống tai ngoài khô, nghe bình thường",None
+28,67,382,139,404,- Ra viện.,None
+29,103,411,377,433,Ngày 26 tháng 07 năm 2022,None
+30,661,415,932,439,Ngày 26 tháng 07 năm 2022,None
+31,117,436,316,460,THỦ TRƯỞNG ĐỚN VỊ,None
+32,694,442,837,464,TRƯỞNG KHOA,None
+33,685,572,934,609,Đại tá BS Lê Văn Tứ,None
+34,180,593,410,623,Đại tá Trần Xuân Lợi,None
