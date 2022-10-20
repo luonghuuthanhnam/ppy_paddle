@@ -7,7 +7,8 @@ import cv2
 import numpy as np
 import PredLineDet
 from IPython.display import display
-
+from concurrent.futures.thread import ThreadPoolExecutor
+import time
 
 # config = Cfg.load_config_from_name("vgg_seq2seq")
 # config.save("default_vgg_seq2seq_config.yml")
@@ -106,21 +107,36 @@ class ProcessImage():
             extracted_dict["croped_pil_img"].append(croped)
         return extracted_dict
 
+    def ocr_single_task(self, i, extracted_dict):
+        croped = extracted_dict["croped_pil_img"][i]
+        # croped = self.text_line_equalization(croped)
+        text, prob = self.text_recognizer.predict(croped, return_prob=True)
+        extracted_dict["text"][i] = text
+        extracted_dict["ocr_score"][i] = prob
+
     def recognize_text(self, extracted_dict):
         data_len = len(extracted_dict["polygon"])
-        print(data_len)
+        # print(data_len)
         extracted_dict["text"] = [""]*data_len
         extracted_dict["ocr_score"] = [0.]*data_len
-        for i in range(data_len):
-            croped = extracted_dict["croped_pil_img"][i]
-            # croped = self.text_line_equalization(croped)
-            text, prob = self.text_recognizer.predict(croped, return_prob=True)
-            extracted_dict["text"][i] = text
-            extracted_dict["ocr_score"][i] = prob
+        with ThreadPoolExecutor (max_workers=100) as executor:
+            for i in range(data_len):
+                # croped = extracted_dict["croped_pil_img"][i]
+                # # croped = self.text_line_equalization(croped)
+
+                # text, prob = self.text_recognizer.predict(croped, return_prob=True)
+                # extracted_dict["text"][i] = text
+                # extracted_dict["ocr_score"][i] = prob
+                executor.submit(self.ocr_single_task, i, extracted_dict)
+
         return extracted_dict
 
     def begin_recognize_text(self, img):
         lines = self.detect_lines(img)
+        s_time = time.time()
         extracted_dict = self.extract_lines(lines,img)
+        print("extracted_line time:", time.time() - s_time)
+        r_time = time.time()
         extracted_dict = self.recognize_text(extracted_dict)
+        print("ocr_line time:", time.time() - r_time)
         return extracted_dict

@@ -20,6 +20,9 @@ import py_vncorenlp
 import torch
 import numpy as np
 import os
+import time
+from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures import as_completed
 
 
 ID2LABEL_DICT = {
@@ -150,8 +153,14 @@ class KieGCN():
 
     def gcn_final_transform_data(self, df, individual_data):
         text_features = []
+        text_list = []
         for _, row in df.iterrows():
-            text_features.append(self.make_sent_bert_features(row["Object"]))
+            text_list.append(row["Object"])
+        with ThreadPoolExecutor(max_workers=100) as executor:
+            for text_feature in executor.map(self.make_sent_bert_features, text_list):
+                text_features.append(text_feature)
+                # text_features.append(self.make_sent_bert_features(row["Object"]))
+        
         text_features = np.asarray(text_features, dtype=np.float32)
 
         numeric_features = df[self.feature_cols].values.astype(np.float32)
@@ -199,8 +208,12 @@ class KieGCN():
 
     def __call__(self, det_n_ocr_result, cv2_img) -> pd.DataFrame:
         self.transform_detocr_to_df_and_img(det_n_ocr_result, cv2_img)
+        s_time = time.time()
         df, individual_data =self.make_graph_data(filename="temp")
+        print("make graph: ", time.time() - s_time)
+        r_time = time.time()
         data_transformed = self.gcn_final_transform_data(df, individual_data)
+        print("transform: ", time.time() - r_time)
         y_preds = self.model_inference(data_transformed)
         predicted_df = self.post_process(y_preds)
         return predicted_df
