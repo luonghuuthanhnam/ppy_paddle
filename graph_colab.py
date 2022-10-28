@@ -115,7 +115,7 @@ class Grapher:
         #sort from top to bottom
         df.sort_values(by=['ymin'], inplace=True)
         df.reset_index(drop=True, inplace=True)
-        # df.to_csv("test_df.csv")
+        df.to_csv("test_df.csv")
         #subtracting ymax by 1 to eliminate ambiguity of boxes being in both left and right 
         df["ymax"] = df["ymax"].apply(lambda x: x - 1)
         

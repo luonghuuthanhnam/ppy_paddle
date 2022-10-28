@@ -99,8 +99,11 @@ class KieGCN():
             "n_special",
         ]
         os.chdir('../../../')
-        self.gcn_model = torch.load(gcn_model_path)
+        self.gcn_model = InvoiceGCN(input_dim=778, chebnet=True, n_classes =15, dropout_rate = 0.3, K=3)
+        self.gcn_model.load_state_dict(torch.load(gcn_model_path))
+        # self.gcn_model = torch.load(gcn_model_path)
         self.gcn_model.to(self.device)
+        self.gcn_model.eval()
 
     def transform_detocr_to_df_and_img(self, det_n_ocr_result, cv2_img):
         result = det_n_ocr_result
@@ -109,22 +112,26 @@ class KieGCN():
         list_xmax = []
         list_ymax = []
         list_Object = []
+        list_polygon = []
 
         for iter in range(len(result["bbox"])):
             xmin, ymin, xmax, ymax = result["bbox"][iter]
             text = result["text"][iter]
+            polygon = result["polygon"][iter]
             list_xmin.append(xmin)
             list_xmax.append(xmax)
             list_ymin.append(ymin)
             list_ymax.append(ymax)
             list_Object.append(text)
+            list_polygon.append(polygon)
         single_df = {
             "xmin": list_xmin,
             "xmax": list_xmax,
             "ymin": list_ymin,
             "ymax": list_ymax,
             "Object": list_Object,
-            "labels": ["None"]*len(list_Object)
+            "labels": ["None"]*len(list_Object),
+            "polygon": list_polygon,
         }
         single_df = pd.DataFrame.from_dict(single_df)
         single_df.to_excel("temp_data/temp_gcn/csv/temp.xlsx")
@@ -132,10 +139,10 @@ class KieGCN():
         
 
     def get_sentence_features(self, sentence):
-        segmented_sentence = self.rdrsegmenter.word_segment(sentence)
-        tokenized_sentence = torch.tensor([self.tokenizer.encode(segmented_sentence[0])])
-        features = []
         with torch.no_grad():
+            segmented_sentence = self.rdrsegmenter.word_segment(sentence)
+            tokenized_sentence = torch.tensor([self.tokenizer.encode(segmented_sentence[0])])
+            features = []
             features = self.phobert(tokenized_sentence)
         return features
 
@@ -187,8 +194,9 @@ class KieGCN():
         return data_transformed
 
     def model_inference(self, data_transformed):
-        y_preds= self.gcn_model(data_transformed.to(self.device))
-        return y_preds
+        with torch.no_grad():
+            y_preds= self.gcn_model(data_transformed.to(self.device))
+            return y_preds
 
     def post_process(self, predicted_data):
 
@@ -201,7 +209,7 @@ class KieGCN():
         cur_df = self.current_raw_df.copy()
         cur_df["pred_label"] = pred_label
         cur_df["confidence_score"] = pred_probs
-        cur_df = cur_df[["index", "xmin", "ymin", "xmax", "ymax", "Object", "pred_label", "confidence_score"]]
+        cur_df = cur_df[["index", "xmin", "ymin", "xmax", "ymax", "Object", "pred_label", "confidence_score", "polygon"]]
 
         self.current_raw_df = None
         return cur_df

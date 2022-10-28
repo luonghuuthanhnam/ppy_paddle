@@ -9,9 +9,6 @@ import PredLineDet
 from IPython.display import display
 from concurrent.futures.thread import ThreadPoolExecutor
 import time
-import re
-from turtle import fillcolor
-import itertools
 
 # config = Cfg.load_config_from_name("vgg_seq2seq")
 # config.save("default_vgg_seq2seq_config.yml")
@@ -78,64 +75,6 @@ class ProcessImage():
             display(Image.fromarray(drawed_img))
         return lines[0]
     
-    def crop_line(self, rotated_img, points, convert_gray):
-        original = Image.fromarray(rotated_img.copy())
-        polygon = []
-        for pair in points:
-            polygon.append(tuple(map(int,pair)))
-
-        list_x = [x for x,y in polygon]
-        list_y = [y for x,y in polygon]
-        xmin = min(list_x)
-        xmax = max(list_x)
-        ymin = min(list_y)
-        ymax = max(list_y)
-
-        mask = Image.new("L", original.size, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.polygon(polygon, fill=255, outline=None)
-        white =  Image.new("L", original.size, 255)
-        result = Image.composite(original, white, mask)
-        croped = original.crop((int(xmin), int(ymin), int(xmax), int(ymax)))
-        if convert_gray == True:
-            croped = self.text_line_equalization(croped)
-        return croped, (polygon, xmin, xmax, ymin, ymax)
-
-    def crop_line_v2(self, rotated_img, points, convert_gray):
-        # original = Image.fromarray(rotated_img.copy())
-        original = rotated_img.copy()
-        polygon = []
-        for pair in points:
-            polygon.append(tuple(map(int,pair)))
-
-        list_x = [x for x,y in polygon]
-        list_y = [y for x,y in polygon]
-        xmin = min(list_x)
-        xmax = max(list_x)
-        ymin = min(list_y)
-        ymax = max(list_y)
-
-
-
-        mask = np.ones(original.shape, dtype=np.uint8)*255
-        # roi_corners = np.array([[(10,10), (300,300), (10,300)]], dtype=np.int32)
-        roi_corners = [polygon]
-        roi_corners = np.array(roi_corners)
-        # fill the ROI so it doesn't get wiped out when the mask is applied
-        channel_count = original.shape[2]  # i.e. 3 or 4 depending on your image
-        ignore_mask_color = (0,)*channel_count
-        cv2.fillPoly(mask, roi_corners, ignore_mask_color)
-        # from Masterfool: use cv2.fillConvexPoly if you know it's convex
-
-        # apply the mask
-        masked_image = cv2.bitwise_or(original, mask)
-
-        croped_mask = masked_image[ymin:ymax, xmin:xmax]
-        if convert_gray == True:
-            croped_mask = self.text_line_equalization(croped_mask)
-        pil_croped_mask = Image.fromarray(croped_mask)
-        return pil_croped_mask, (polygon, xmin, xmax, ymin, ymax)
-
     def extract_lines(self, lines, rotated_img, convert_gray = True):
         extracted_dict = {
             "bbox": [],
@@ -143,8 +82,26 @@ class ProcessImage():
             "croped_pil_img": [],
         }
         for line in lines:
-            croped, _points = self.crop_line_v2(rotated_img, line, convert_gray)
-            polygon, xmin, xmax, ymin, ymax = _points
+            original = Image.fromarray(rotated_img.copy())
+            polygon = []
+            for pair in line:
+                polygon.append(tuple(map(int,pair)))
+
+            list_x = [x for x,y in polygon]
+            list_y = [y for x,y in polygon]
+            xmin = min(list_x)
+            xmax = max(list_x)
+            ymin = min(list_y)
+            ymax = max(list_y)
+
+            mask = Image.new("L", original.size, 0)
+            draw = ImageDraw.Draw(mask)
+            draw.polygon(polygon, fill=255, outline=None)
+            white =  Image.new("L", original.size, 255)
+            result = Image.composite(original, white, mask)
+            croped = original.crop((int(xmin), int(ymin), int(xmax), int(ymax)))
+            if convert_gray == True:
+                croped = self.text_line_equalization(croped)
             extracted_dict["polygon"].append(polygon)
             extracted_dict["bbox"].append((int(xmin), int(ymin), int(xmax), int(ymax)))
             extracted_dict["croped_pil_img"].append(croped)
@@ -152,8 +109,8 @@ class ProcessImage():
 
     def ocr_single_task(self, i, extracted_dict):
         croped = extracted_dict["croped_pil_img"][i]
+        # croped = self.text_line_equalization(croped)
         text, prob = self.text_recognizer.predict(croped, return_prob=True)
-        text = re.sub(' +', ' ', text)
         extracted_dict["text"][i] = text
         extracted_dict["ocr_score"][i] = prob
 
@@ -164,7 +121,14 @@ class ProcessImage():
         extracted_dict["ocr_score"] = [0.]*data_len
         with ThreadPoolExecutor (max_workers=100) as executor:
             for i in range(data_len):
+                # croped = extracted_dict["croped_pil_img"][i]
+                # # croped = self.text_line_equalization(croped)
+
+                # text, prob = self.text_recognizer.predict(croped, return_prob=True)
+                # extracted_dict["text"][i] = text
+                # extracted_dict["ocr_score"][i] = prob
                 executor.submit(self.ocr_single_task, i, extracted_dict)
+
         return extracted_dict
 
     def begin_recognize_text(self, img):
@@ -176,7 +140,3 @@ class ProcessImage():
         extracted_dict = self.recognize_text(extracted_dict)
         print("ocr_line time:", time.time() - r_time)
         return extracted_dict
-
-    def individual_OCR(self, pil_line_img):
-        text, prob = self.text_recognizer.predict(pil_line_img, return_prob=True)
-        return text, prob
