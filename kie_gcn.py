@@ -23,7 +23,7 @@ import os
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from concurrent.futures import as_completed
-
+import uuid
 
 ID2LABEL_DICT = {
     0: "None",
@@ -98,6 +98,7 @@ class KieGCN():
             "n_numeric",
             "n_special",
         ]
+        self.temp_dir = "temp_data/temp_gcn/"
         os.chdir('../../../')
         self.gcn_model = InvoiceGCN(input_dim=778, chebnet=True, n_classes =15, dropout_rate = 0.3, K=3)
         self.gcn_model.load_state_dict(torch.load(gcn_model_path))
@@ -133,9 +134,11 @@ class KieGCN():
             "labels": ["None"]*len(list_Object),
             "polygon": list_polygon,
         }
+        temp_file_name = str(uuid.uuid4())
         single_df = pd.DataFrame.from_dict(single_df)
-        single_df.to_excel("temp_data/temp_gcn/csv/temp.xlsx")
-        cv2.imwrite("temp_data/temp_gcn/img/temp.jpg", cv2_img)
+        single_df.to_excel(f"temp_data/temp_gcn/csv/{temp_file_name}.xlsx")
+        cv2.imwrite(f"temp_data/temp_gcn/img/{temp_file_name}.jpg", cv2_img)
+        return temp_file_name 
         
 
     def get_sentence_features(self, sentence):
@@ -215,14 +218,20 @@ class KieGCN():
         return cur_df
 
     def __call__(self, det_n_ocr_result, cv2_img) -> pd.DataFrame:
-        self.transform_detocr_to_df_and_img(det_n_ocr_result, cv2_img)
+        temp_file_name = self.transform_detocr_to_df_and_img(det_n_ocr_result, cv2_img)
         s_time = time.time()
-        df, individual_data =self.make_graph_data(filename="temp")
+        df, individual_data =self.make_graph_data(filename=temp_file_name)
         print("make graph: ", time.time() - s_time)
         r_time = time.time()
         data_transformed = self.gcn_final_transform_data(df, individual_data)
         print("transform: ", time.time() - r_time)
         y_preds = self.model_inference(data_transformed)
         predicted_df = self.post_process(y_preds)
+        temp_xlsx_path = f"./{self.temp_dir}csv/{temp_file_name}.xlsx"
+        temp_img_path = f"./{self.temp_dir}img/{temp_file_name}.jpg"
+        if os.path.exists(temp_xlsx_path):
+            os.remove(temp_xlsx_path)
+        if os.path.exists(temp_img_path):
+            os.remove(temp_img_path)
         return predicted_df
         
