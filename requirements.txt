@@ -1,1 +1,10 @@
 PyMuPDF==1.18.7
+fastapi
+uvicorn[standard]
+vietocr
+# paddleocr
+# paddlepaddle==2.4.0rc0
+py_vncorenlp
+transformers
+tokenizers
+unidecode

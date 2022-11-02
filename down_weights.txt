@@ -1,0 +1,8 @@
+#weights
+https://drive.google.com/file/d/1Ib6YsknTaray8EPT73ruLECn0ty0unwn/view?usp=share_link
+gdown https://drive.google.com/uc?id=1Ib6YsknTaray8EPT73ruLECn0ty0unwn
+
+
+#paddle_det_weight
+https://drive.google.com/file/d/1tedKNDpl6meRDCmpphxicdopxPg-xXXs/view?usp=share_link
+gdown https://drive.google.com/uc?id=1tedKNDpl6meRDCmpphxicdopxPg-xXXs
