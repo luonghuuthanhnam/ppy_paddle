@@ -1,0 +1,3 @@
+uvicorn main:app --host 0.0.0.0 --reload
+
+ssh -R 8000:localhost:8000 macca-prod (run this command on local machine)

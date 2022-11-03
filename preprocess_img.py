@@ -5,7 +5,56 @@ from scipy import ndimage
 import math
 import time
 from PIL import Image, ImageDraw
+import os
 
+import boto3
+import time
+from pdf2image import convert_from_path
+
+
+class DownAndLoadImage():
+    def __init__(self, bucket_name) -> None:
+        self.s3 = boto3.client('s3')
+        self.bucket_name = bucket_name
+        self.SUPPORTED_IMG_TYPE = [
+            "jpg",
+            "jpeg",
+            "png"
+        ]
+
+    def load_img(self, file_path):
+        loaded_img = None
+        temp = file_path.split(".")
+        main_file_name = ".".join(temp[:-1])
+        ext = temp[-1]
+        
+        if ext.lower() == "pdf":
+            loaded_img = self.convert_pdf2img(file_path)
+        elif ext.lower() in self.SUPPORTED_IMG_TYPE:
+            loaded_img = cv2.imread(file_path)
+        else:
+            print(f"Unsupported file type: *{ext}")
+        return loaded_img
+    
+    def convert_pdf2img(self, file_path):
+        images = convert_from_path(file_path)
+        cv2_img = np.array(images[0])
+        cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
+        return cv2_img
+        
+    def down_img(self, object_name, save_dir = "temp_data/download/"):
+        saved_file_path = save_dir+object_name
+        with open(saved_file_path, "wb") as f:
+            self.s3.download_fileobj('papaya-fwd-prod-stp', object_name, f)
+        return saved_file_path 
+    
+    def __call__(self, object_name):
+        file_path = self.down_img(object_name)
+        cv2_img = self.load_img(file_path=file_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        return cv2_img
+    
 class PreprocessImage():
     '''
     Resize, Correct Orientation, Straighten image input

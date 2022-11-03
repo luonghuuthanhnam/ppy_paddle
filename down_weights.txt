@@ -11,3 +11,6 @@ gdown https://drive.google.com/uc?id=1tedKNDpl6meRDCmpphxicdopxPg-xXXs
 #install cudnn
 sudo aptitude update
 sudo apt-get -y install nvidia-cudnn
+
+#install poppler
+sudo apt-get install poppler-utils

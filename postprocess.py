@@ -282,7 +282,7 @@ class KiePostProcess():
                 if each in unaccented_checking_text.lower():
                     if right_part.lower() == "nam":
                         gender = "Nam"
-                    elif right_part.lower() == "nu":
+                    elif right_part.lower() == "nữ":
                         gender = "Nữ"
                     break
 
@@ -435,6 +435,25 @@ class KiePostProcess():
                 break
         return age, temp_gender
 
+    def find_patient_name_remain(self):
+        name = None
+        # remain_field = []
+        # for cls in self.LABEL_LIST:
+        #     remain_field +=  self.get_raw_predicted(cls, self.predicted_kie_df)
+        remain_field =  self.get_raw_predicted("document_type", self.predicted_kie_df) + self.get_raw_predicted("treatment", self.predicted_kie_df) + self.get_raw_predicted("note", self.predicted_kie_df)
+
+        for each in remain_field:
+            list_exception = ["giayravien", "hoadonvienphi", "hoadonthuphi", "donthuoc", "giaychungnhanphauthuat", "bangke"]
+            upper_each = each.strip().upper()
+            unaccented_lower_each = unidecode.unidecode(upper_each).lower().replace(" ", "")
+            
+            if each == upper_each and unaccented_lower_each not in list_exception:
+                if len(each.split()) in range(1, 8):
+                    name = each
+            if name!= None:
+                break
+        return name
+
     def find_hospital_name_remain(self):
         check_list = ["benhvien", "trungtamyte", "ttyt", "bvdk", "benhxa"]
         hospital_name = None
@@ -449,6 +468,7 @@ class KiePostProcess():
             if hospital_name != None:
                 break
         return hospital_name
+
 
     def admission_discharge_correction(self, admission_dates, discharge_dates):
         total_dates = []
