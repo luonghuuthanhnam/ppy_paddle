@@ -25,6 +25,13 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from concurrent.futures import as_completed
 import uuid
 
+from fairseq.models.roberta import RobertaModel
+from fairseq.data.encoders.fastbpe import fastBPE
+from fairseq.data import Dictionary
+from fairseq.models.roberta import RobertaEncDecModel
+import torch
+import torch.nn.functional as F
+
 ID2LABEL_DICT = {
     0: "None",
     1: "sign_date",
@@ -52,9 +59,9 @@ class InvoiceGCN(nn.Module):
         self.dropout_rate = dropout_rate
 
         if chebnet:
-            self.conv1 = ChebConv(self.input_dim, 64, K=K)
+            self.conv1 = ChebConv(self.input_dim, 128, K=K)
             # self.conv2 = ChebConv(64, 32, K=K)
-            self.conv3 = ChebConv(64, 64, K=K)
+            self.conv3 = ChebConv(128, 64, K=K)
             self.conv4 = ChebConv(64, self.n_classes, K=K)
         else:
             self.conv1 = GCNConv(self.first_dim, 64, improved=True, cached=True)
@@ -234,4 +241,184 @@ class KieGCN():
         if os.path.exists(temp_img_path):
             os.remove(temp_img_path)
         return predicted_df
+
+
+class KieGCN_v2():
+    def __init__(self, 
+            PhoBERT_base_fairseq_dir = 'weights/nlp/PhoBERT_base_fairseq',
+            PhoBERT_trained_state_dict_path = 'weights/nlp/phoBert_trained_state_dict/phoBert_state_dict_221101.pth',
+            gcn_state_dict_path =  "weights/gcn/GCN_221103_state_dict.pth"
+            ) -> None:
+     
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu").type
+        gcn_state_dict_path = os.path.join(os.getcwd(), gcn_state_dict_path)
+
+        self.phoBERT_cls = self.load_custom_phoBert(PhoBERT_base_fairseq_dir, PhoBERT_trained_state_dict_path)
         
+        self.current_raw_df = None
+        self.feature_cols = [
+            "rd_b",
+            "rd_r",
+            "rd_t",
+            "rd_l",
+            "line_number",
+            "n_upper",
+            "n_alpha",
+            "n_spaces",
+            "n_numeric",
+            "n_special",
+        ]
+        self.temp_dir = "temp_data/temp_gcn/"
+        # os.chdir('../../../')
+        self.gcn_model = InvoiceGCN(input_dim=778, chebnet=True, n_classes =15, dropout_rate = 0.2, K=3)
+        self.gcn_model.load_state_dict(torch.load(gcn_state_dict_path))
+        # self.gcn_model = torch.load(gcn_model_path)
+        self.gcn_model.to(self.device)
+        self.gcn_model.eval()
+
+    def load_custom_phoBert(self, phoBert_base_fairseq_dir, PhoBERT_trained_state_dict_path):
+        num_classes = 13
+        phoBERT_cls = RobertaModel.from_pretrained( phoBert_base_fairseq_dir , checkpoint_file='model.pt')
+
+        # Load BPE
+        class BPE():
+            bpe_codes = phoBert_base_fairseq_dir + '/bpe.codes'
+
+        args = BPE()
+        phoBERT_cls.bpe = fastBPE(args) #Incorporate the BPE encoder into PhoBERT
+
+        # Add header cho classification với số lượng classes = 10
+        phoBERT_cls.register_classification_head('new_task', num_classes=num_classes)
+        phoBERT_cls.load_state_dict(torch.load(PhoBERT_trained_state_dict_path))
+        
+        phoBERT_cls.to(self.device)
+        phoBERT_cls.eval()  # disable dropout (or leave in train mode to finetune
+        return phoBERT_cls
+    
+    def transform_detocr_to_df_and_img(self, det_n_ocr_result, cv2_img):
+        result = det_n_ocr_result
+        list_xmin = []
+        list_ymin = []
+        list_xmax = []
+        list_ymax = []
+        list_Object = []
+        list_polygon = []
+
+        for iter in range(len(result["bbox"])):
+            xmin, ymin, xmax, ymax = result["bbox"][iter]
+            text = result["text"][iter]
+            polygon = result["polygon"][iter]
+            list_xmin.append(xmin)
+            list_xmax.append(xmax)
+            list_ymin.append(ymin)
+            list_ymax.append(ymax)
+            list_Object.append(text)
+            list_polygon.append(polygon)
+        single_df = {
+            "xmin": list_xmin,
+            "xmax": list_xmax,
+            "ymin": list_ymin,
+            "ymax": list_ymax,
+            "Object": list_Object,
+            "labels": ["None"]*len(list_Object),
+            "polygon": list_polygon,
+        }
+        temp_file_name = str(uuid.uuid4())
+        single_df = pd.DataFrame.from_dict(single_df)
+        single_df.to_excel(f"temp_data/temp_gcn/csv/{temp_file_name}.xlsx")
+        cv2.imwrite(f"temp_data/temp_gcn/img/{temp_file_name}.jpg", cv2_img)
+        return temp_file_name 
+        
+
+    def get_sentence_features(self, sentence):
+        with torch.no_grad():
+            token_idxs = self.phoBERT_cls.encode(sentence)
+            token_idxs.to(self.device)
+            features = self.phoBERT_cls.extract_features(token_idxs)
+        return features
+
+    def make_sent_bert_features(self, text):
+        features = self.get_sentence_features(text)
+        return features[0][0].cpu().numpy()
+
+    def make_graph_data(self, filename = 'temp'):
+        connect = graph.Grapher(filename)
+        G,result, df = connect.graph_formation(export_graph=False)
+        df = connect.relative_distance(export_document_graph = False)
+        individual_data = from_networkx(G)
+        self.current_raw_df = df.copy()
+        return df, individual_data
+
+    def gcn_final_transform_data(self, df, individual_data):
+        text_features = []
+        text_list = []
+        for _, row in df.iterrows():
+            text_list.append(row["Object"])
+        with ThreadPoolExecutor(max_workers=100) as executor:
+            for text_feature in executor.map(self.make_sent_bert_features, text_list):
+                text_features.append(text_feature)
+                # text_features.append(self.make_sent_bert_features(row["Object"]))
+        
+        text_features = np.asarray(text_features, dtype=np.float32)
+
+        numeric_features = df[self.feature_cols].values.astype(np.float32)
+
+        features = np.concatenate((numeric_features, text_features), axis=1)
+        features = torch.tensor(features)
+
+        for col in df.columns:
+            try:
+                df[col] = df[col].str.strip()
+            except AttributeError as e:
+                pass
+        text = df["Object"].values
+        individual_data.x = features
+
+        individual_data.text = text
+
+        test_list_of_graphs = []
+        test_list_of_graphs.append(individual_data)
+
+        data_transformed = ""
+        data_transformed = torch_geometric.data.Batch.from_data_list(test_list_of_graphs)
+        data_transformed.edge_attr = None
+        return data_transformed
+
+    def model_inference(self, data_transformed):
+        with torch.no_grad():
+            y_preds= self.gcn_model(data_transformed.to(self.device))
+            return y_preds
+
+    def post_process(self, predicted_data):
+
+        pred_classes = predicted_data.max(dim=1)[1].cpu().numpy()
+        shorten_pred = [predicted_data[idx][pred_classes[idx]] for idx in range(len(pred_classes))]
+        pred_probs = list(torch.exp(torch.tensor(shorten_pred)).cpu().numpy())
+        pred_label = [ID2LABEL_DICT[each] for each in list(pred_classes)]
+
+
+        cur_df = self.current_raw_df.copy()
+        cur_df["pred_label"] = pred_label
+        cur_df["confidence_score"] = pred_probs
+        cur_df = cur_df[["index", "xmin", "ymin", "xmax", "ymax", "Object", "pred_label", "confidence_score", "polygon"]]
+
+        self.current_raw_df = None
+        return cur_df
+
+    def __call__(self, det_n_ocr_result, cv2_img) -> pd.DataFrame:
+        temp_file_name = self.transform_detocr_to_df_and_img(det_n_ocr_result, cv2_img)
+        s_time = time.time()
+        df, individual_data =self.make_graph_data(filename=temp_file_name)
+        print("make graph: ", time.time() - s_time)
+        r_time = time.time()
+        data_transformed = self.gcn_final_transform_data(df, individual_data)
+        print("transform: ", time.time() - r_time)
+        y_preds = self.model_inference(data_transformed)
+        predicted_df = self.post_process(y_preds)
+        temp_xlsx_path = f"./{self.temp_dir}csv/{temp_file_name}.xlsx"
+        temp_img_path = f"./{self.temp_dir}img/{temp_file_name}.jpg"
+        if os.path.exists(temp_xlsx_path):
+            os.remove(temp_xlsx_path)
+        if os.path.exists(temp_img_path):
+            os.remove(temp_img_path)
+        return predicted_df

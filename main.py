@@ -25,7 +25,7 @@ print("*****Loading models...*****")
 load_model_time = time.time()
 orientationChecker = OrientationChecker( model_path= "./weights/orientation/invoice_rotation_220920.pth")
 e2e_OCR_Engine = e2e_process.E2E_OCR_Engine(
-    detection_model_path="./PaddleOCR/pretrained_models/exported_det_model_221025",
+    detection_model_path="PaddleOCR/pretrained_models/det_db_inference_221025",
     text_recognition_model_path="./weights/ocr/ocr_221026.pth",
     gcn_model_path="./weights/gcn/GCN_221027_best_state_dict.pth"
 )

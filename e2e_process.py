@@ -23,12 +23,15 @@ import gc
 
 class E2E_OCR_Engine():
     def __init__(self,
-            detection_model_path = "./PaddleOCR/pretrained_models/exported_det_model_221011/",
+            detection_model_path = "PaddleOCR/pretrained_models/exported_det_model_221011/",
             text_recognition_model_path = "./weights/ocr/line_ocr_220930_3.pth",
             gcn_model_path = "weights/gcn/GCN_221017.pth") -> None:
         self.preprocessImage = preprocess_img.PreprocessImage()
         self.lineDetAndOCR = LineOCR.ProcessImage(detection_model_path=detection_model_path, text_recognition_model_path = text_recognition_model_path)
-        self.kieGCN = kie_gcn.KieGCN(gcn_model_path=gcn_model_path)
+        # self.kieGCN = kie_gcn.KieGCN(gcn_model_path=gcn_model_path)
+        self.kieGCN = kie_gcn.KieGCN_v2(PhoBERT_base_fairseq_dir="weights/nlp/PhoBERT_base_fairseq",
+                                        PhoBERT_trained_state_dict_path="weights/nlp/phoBert_trained_state_dict/phoBert_state_dict_221101.pth",
+                                        gcn_state_dict_path="weights/gcn/GCN_221103_state_dict.pth")
         self.kiePostprocess = postprocess.KiePostProcess()
         self.empty_extracted_result = {
             "hospital_name": None,
