@@ -50,11 +50,12 @@ class KiePostProcess():
         xmin = extracted_row["xmin"].to_list()
         ymax = extracted_row["ymax"].to_list()
         ymin = extracted_row["ymin"].to_list()
+        gcn_scores = extracted_row["confidence_score"].to_list()
         extracted_text = [each.strip() for each in extracted_text]
         if return_xy == True:
-            return extracted_text, (xmax, xmin, ymax, ymin)
+            return extracted_text, gcn_scores, (xmax, xmin, ymax, ymin)
         else:
-            return extracted_text
+            return extracted_text, gcn_scores
 
     def patient_name_regularization(self, raw_patient_name):
         shorten_patient_name = raw_patient_name
@@ -155,27 +156,6 @@ class KiePostProcess():
     def check_mixed_age_gender(self, raw_text):
         age = None
         gender = None
-        # count_spliter = raw_text.count(":")
-        # is_mixed_age_gender = False
-        # if count_spliter>1:
-        #     is_mixed_age_gender = True
-        # temp_age_elm = False
-        # temp_gender_elm = False
-        # for each in self.AGE_ANCHOR_LIST:
-        #     if each in raw_text:
-        #         temp_age_elm = True
-        #         break
-        # for each in self.GENDER_ANCHOR_LIST:
-        #     print(each) 
-        #     if each in raw_text:
-        #         temp_gender_elm = True
-        #         break
-        # if temp_age_elm + temp_gender_elm ==2:
-        #     is_mixed_age_gender = True
-
-        # if is_mixed_age_gender:
-            #Mixed age and gender check
-        # print("**mixed age and gender**")
         parts = raw_text.split(":")
         list_number = re.findall(r'\d+', raw_text)
         if len(list_number)==1:
@@ -322,7 +302,7 @@ class KiePostProcess():
         return unique_icds
 
     def hospital_name_postprocess(self):
-        extracted_hospital_name, (xmax, xmin, ymax, ymin) =  self.get_raw_predicted("hospital_name", self.predicted_kie_df, sort_top_down=True, return_xy=True)
+        extracted_hospital_name, extracted_scores, (xmax, xmin, ymax, ymin) =  self.get_raw_predicted("hospital_name", self.predicted_kie_df, sort_top_down=True, return_xy=True)
         merged_hospital_name = None
         if len(extracted_hospital_name) >0:
             merged_hospital_name = extracted_hospital_name[0]
@@ -336,80 +316,99 @@ class KiePostProcess():
                     y_dis = np.abs(cur_cen_y - pre_cen_y)
                     if x_dis <= 100 and y_dis <= 50:
                         merged_hospital_name += f" {extracted_hospital_name[i]}" 
-        return merged_hospital_name
+        mean_score = np.mean(np.array(extracted_scores))
+        return merged_hospital_name, mean_score
 
     def patient_name_postprocess(self):
-        extracted_patient_names =  self.get_raw_predicted("patient_name", self.predicted_kie_df)
+        extracted_patient_names, extraced_scores =  self.get_raw_predicted("patient_name", self.predicted_kie_df)
         patient_name = None
+        extraced_score = 0
         if len(extracted_patient_names)>0:
             patient_name = self.patient_name_regularization(extracted_patient_names[0])
-        return patient_name
+            extraced_score = extraced_scores[0]
+        return patient_name, extraced_score
 
     def age_postprocess(self):
-        extracted_ages =  self.get_raw_predicted("age", self.predicted_kie_df)
+        extracted_ages, extraced_scores =  self.get_raw_predicted("age", self.predicted_kie_df)
         revert_extracted_ages = extracted_ages.copy()
+        revert_extraced_scores = extraced_scores.copy()
         revert_extracted_ages.reverse()
+        revert_extraced_scores.reverse()
         age, gender = None, None
+        age_score, gender_score = 0,0
         # if len(extracted_ages)>0:
-        for each in revert_extracted_ages:
+        for each, score in zip(revert_extracted_ages, revert_extraced_scores):
             temp_age, temp_gender = self.age_regularization(each)
             if temp_age!= None:
                 age = temp_age
+                age_score = score
             if temp_gender!= None:
                 gender = temp_gender
-        return age, gender
+                gender_score = score
+        return (age, age_score), (gender, gender_score)
 
     def gender_postprocess(self):
-        extracted_gender =  self.get_raw_predicted("gender", self.predicted_kie_df)
+        extracted_gender, extracted_scores =  self.get_raw_predicted("gender", self.predicted_kie_df)
         gender, age = None, None
+        age_score, gender_score = 0,0
         if len(extracted_gender)>0:
             gender, temp_age = self.gender_regularization(extracted_gender[0])
+            score = extracted_scores[0]
             if temp_age!= None:
                 age = temp_age
-        return gender, age
+                age_score = score
+            if gender != None:
+                gender_score = score
+        return (gender, gender_score), (age, age_score)
 
     def admission_date_postprocess(self):
-        extracted_admission_date =  self.get_raw_predicted("admission_date", self.predicted_kie_df)
+        extracted_admission_date, extracted_scores =  self.get_raw_predicted("admission_date", self.predicted_kie_df)
         admission_dates = []
+        admission_dates_scores = []
         if len(extracted_admission_date)>0:
-            for each in extracted_admission_date:
+            for each, score in zip(extracted_admission_date, extracted_scores):
                 d,m,y = self.vn_date_parser(each)
                 if d!= -1 and m!= -1 and y!= -1:
                     vis_date = f"{d}/{m}/{y}"
                     admission_dates.append(vis_date)
-        return admission_dates
+                    admission_dates_scores.append(score)
+        return admission_dates, admission_dates_scores
 
 
     def discharge_date_postprocess(self):
-        extracted_discharge_date =  self.get_raw_predicted("discharge_date", self.predicted_kie_df)
+        extracted_discharge_date, extracted_scores =  self.get_raw_predicted("discharge_date", self.predicted_kie_df)
         discharge_dates = []
+        discharge_dates_scores = []
         if len(extracted_discharge_date)>0:
-            for each in extracted_discharge_date:
+            for each, score in zip(extracted_discharge_date, extracted_scores):
                 d,m,y = self.vn_date_parser(each)
                 if d!= -1 and m!= -1 and y!= -1:
                     vis_date = f"{d}/{m}/{y}"
                     discharge_dates.append(vis_date)
-        return discharge_dates
+                    discharge_dates_scores.append(score)
+        return discharge_dates, discharge_dates_scores
 
     def sign_date_postprocess(self):
-        extracted_sign_date =  self.get_raw_predicted("sign_date", self.predicted_kie_df)
+        extracted_sign_date, extracted_scores =  self.get_raw_predicted("sign_date", self.predicted_kie_df)
         sign_dates = []
+        sign_dates_scores = []
         if len(extracted_sign_date)>0:
-            for each in extracted_sign_date:
+            for each, score in zip(extracted_sign_date, extracted_scores):
                 d,m,y = self.vn_date_parser(each)
                 if d!= -1 and m!= -1 and y!= -1:
                     vis_date = f"{d}/{m}/{y}"
                     sign_dates.append(vis_date)
-        return sign_dates
+                    sign_dates_scores.append(score)
+        return sign_dates, sign_dates_scores
 
     def ICD_code_postprocess(self):
-        extracted_ICD_code = self.get_raw_predicted("diagnose", self.predicted_kie_df)
+        extracted_ICD_code, extracted_ICD_code_scores = self.get_raw_predicted("diagnose", self.predicted_kie_df)
         unique_icd_codes = []
         if len(extracted_ICD_code)>0:
             for each in extracted_ICD_code:
                 icd_code = self.icd_code_parser(each)
                 unique_icd_codes += icd_code
-        remain_field =  self.get_raw_predicted("None", self.predicted_kie_df) + self.get_raw_predicted("treatment", self.predicted_kie_df) + self.get_raw_predicted("note", self.predicted_kie_df)
+        remain_field =  self.get_raw_predicted("None", self.predicted_kie_df)[0] + self.get_raw_predicted("treatment", self.predicted_kie_df)[0] + self.get_raw_predicted("note", self.predicted_kie_df)[0]
         for each in remain_field:
             if "icd" in each.lower():
                 icd_code = self.icd_code_parser(each)
@@ -419,30 +418,38 @@ class KiePostProcess():
 
     def find_age_remain(self):
         check_list = ["tuổi", "ngày sinh", "năm sinh"]
-        age = None
-        temp_gender = None
+        age, temp_gender = None, None
+        age_score, temp_gender_score = 0,0
         remain_field = []
+        remain_field_scores = []
         for cls in self.LABEL_LIST:
-            remain_field +=  self.get_raw_predicted(cls, self.predicted_kie_df)
+            fieds, scores = self.get_raw_predicted(cls, self.predicted_kie_df)
+            remain_field +=  fieds
+            remain_field_scores +=  scores
 
-        for each in remain_field:
+        for each, score in zip(remain_field, remain_field_scores):
             for i in check_list:
                 if i in each.lower():
                     splited_text = each.lower().split(i)[-1]
                     age, temp_gender = self.age_regularization(splited_text)
+                    if age!= None:
+                        age_score = score
+                    if temp_gender != None:
+                        temp_gender_score = score
                     break
             if age!= None:
                 break
-        return age, temp_gender
+        return (age, age_score), (temp_gender, temp_gender_score)
 
     def find_patient_name_remain(self):
         name = None
+        name_score = 0
         # remain_field = []
         # for cls in self.LABEL_LIST:
         #     remain_field +=  self.get_raw_predicted(cls, self.predicted_kie_df)
-        remain_field =  self.get_raw_predicted("document_type", self.predicted_kie_df) + self.get_raw_predicted("treatment", self.predicted_kie_df) + self.get_raw_predicted("note", self.predicted_kie_df)
+        remain_field, extracted_scores =  self.get_raw_predicted("document_type", self.predicted_kie_df) + self.get_raw_predicted("treatment", self.predicted_kie_df) + self.get_raw_predicted("note", self.predicted_kie_df)
 
-        for each in remain_field:
+        for each, score in zip(remain_field, extracted_scores):
             list_exception = ["giayravien", "hoadonvienphi", "hoadonthuphi", "donthuoc", "giaychungnhanphauthuat", "bangke"]
             upper_each = each.strip().upper()
             unaccented_lower_each = unidecode.unidecode(upper_each).lower().replace(" ", "")
@@ -450,33 +457,42 @@ class KiePostProcess():
             if each == upper_each and unaccented_lower_each not in list_exception:
                 if len(each.split()) in range(1, 8):
                     name = each
+                    name_score = score
             if name!= None:
                 break
-        return name
+        return name, name_score
 
     def find_hospital_name_remain(self):
         check_list = ["benhvien", "trungtamyte", "ttyt", "bvdk", "benhxa"]
         hospital_name = None
+        hospital_name_score = 0
         # for cls in self.LABEL_LIST:
-        remain_field =  self.get_raw_predicted("department", self.predicted_kie_df)
-        for each in remain_field:
+        remain_field, extracted_score =  self.get_raw_predicted("department", self.predicted_kie_df)
+        for each, score in zip(remain_field, extracted_score):
             unaccented_checking_text = unidecode.unidecode(each).lower().replace(" ","")
             for i in check_list:
                 if i in unaccented_checking_text:
                     hospital_name = each
+                    hospital_name_score = score
                     break
             if hospital_name != None:
                 break
-        return hospital_name
+        return hospital_name, hospital_name_score
 
 
-    def admission_discharge_correction(self, admission_dates, discharge_dates):
+    def admission_discharge_correction(self, admission_dates, admission_dates_scores, discharge_dates, discharge_dates_scores):
         total_dates = []
         digit_total_dates = []
+        total_dates_scores = []
         admission_dates_out = admission_dates.copy()
         discharge_dates_out = discharge_dates.copy()
+        
+        admission_dates_scores_out = admission_dates_scores.copy()
+        discharge_dates_scores_out = discharge_dates_scores.copy()
+        
         temp_total_dates = admission_dates_out + discharge_dates_out
-        for each in temp_total_dates:
+        temp_total_dates_scores = admission_dates_scores_out + discharge_dates_scores_out
+        for each, score in zip(temp_total_dates, temp_total_dates_scores):
             if each not in total_dates:
                 d,m,y = each.split("/")
                 d = "{:02d}".format(int(d))
@@ -487,13 +503,17 @@ class KiePostProcess():
                 digit_total_dates.append(digit_date)
                 new_string_date = f"{d}/{m}/{y}"
                 total_dates.append(new_string_date)
+                total_dates_scores.append(score)
         if len(total_dates) > 1:
-            zipped = zip(total_dates, digit_total_dates)
+            zipped = zip(total_dates, digit_total_dates, total_dates_scores)
             sorted_dates = sorted(zipped, key = lambda x: x[1])
             admission_dates_out = sorted_dates[0][0]
+            admission_dates_scores_out = sorted_dates[0][2]
+            
             discharge_dates_out = sorted_dates[-1][0]
+            discharge_dates_scores_out = sorted_dates[-1][2]
+            
         elif len(total_dates) == 1:
-            new_string_date
             if len(admission_dates_out) == 1:
                 d,m,y = admission_dates_out[0].split("/")
                 d = "{:02d}".format(int(d))
@@ -501,6 +521,7 @@ class KiePostProcess():
                 y = "{:04d}".format(int(y))
                 new_string_date = f"{d}/{m}/{y}"
                 admission_dates_out = [new_string_date]
+                admission_dates_scores_out = [admission_dates_scores[0]]
             else:
                 d,m,y = discharge_dates_out[0].split("/")
                 d = "{:02d}".format(int(d))
@@ -508,5 +529,6 @@ class KiePostProcess():
                 y = "{:04d}".format(int(y))
                 new_string_date = f"{d}/{m}/{y}"
                 discharge_dates_out = [new_string_date]
-        return admission_dates_out, discharge_dates_out
+                discharge_dates_scores_out = [discharge_dates_scores[0]]
+        return admission_dates_out, admission_dates_scores_out, discharge_dates_out, discharge_dates_scores_out
             
