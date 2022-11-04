@@ -164,8 +164,8 @@ class E2E_OCR_Engine():
 
             main_extracted_result = full_extracted_result["data"][0]["info"]
             if hospital_name != None:
-                main_extracted_result["hospital_name"] = hospital_name
-                main_extracted_result["hospital_name_score"] = hospital_name_score
+                main_extracted_result["medical_facility"] = hospital_name
+                main_extracted_result["medical_facility_score"] = hospital_name_score
             if patient_name != None:
                 main_extracted_result["patient_name"] = patient_name
                 main_extracted_result["patient_name_score"] = patient_name_score
