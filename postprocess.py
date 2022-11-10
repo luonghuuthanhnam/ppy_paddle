@@ -156,19 +156,34 @@ class KiePostProcess():
     def check_mixed_age_gender(self, raw_text):
         age = None
         gender = None
+        print("raw_text", raw_text)
         parts = raw_text.split(":")
         list_number = re.findall(r'\d+', raw_text)
         if len(list_number)==1:
             age = list_number[0]
-            unit_flag = sum([True if each in parts[1].lower() else False for each in ["th", "tháng"]])
+            unit_flag = sum([True if each in raw_text.lower() else False for each in ["th", "tháng"]])
             if unit_flag != 0:
                 age = int(age)/12
         
-        words = raw_text.split(" ")
-        if words[-1].lower().strip() == "nam":
-            gender = "Nam"
-        elif words[-1].lower().strip() == "nữ":
-            gender = "Nữ"
+        raw_text_check = raw_text.replace(" ", "").lower()
+        for each in ["xnam", "namx" "xnữ", "nữx"]:
+            if gender != None:
+                break
+            else:
+                if each in raw_text_check:
+                    if "nam" in each:
+                        gender = "Nam"
+                        break
+                    else:
+                        gender = "Nữ"
+                        break
+                    
+        if gender == None:
+            words = raw_text.split(" ")
+            if words[-1].lower().strip() in ["nam"]:
+                gender = "Nam"
+            elif words[-1].lower().strip() == "nữ":
+                gender = "Nữ"
         
         
         if len(list_number) > 1:
@@ -270,13 +285,27 @@ class KiePostProcess():
             shorten_gender = raw_gender
             unaccented_checking_text = unidecode.unidecode(shorten_gender).lower()
             for each in self.GENDER_ANCHOR_LIST:
-                unaccented_checking_text = unaccented_checking_text.replace(each, "")
-            unaccented_checking_text = unaccented_checking_text.strip()
-            if unaccented_checking_text == "nam":
-                gender = "Nam"
-            elif unaccented_checking_text == "nu":
-                gender = "Nữ"
-
+                unaccented_checking_text = unaccented_checking_text.replace(each, "").replace(" ", "")
+            
+                for each in ["xnam", "namx" "xnu", "nux"]:
+                    if gender != None:
+                        break
+                    else:
+                        if each in unaccented_checking_text:
+                            if "nam" in each:
+                                gender = "Nam"
+                                break
+                            else:
+                                gender = "Nữ"
+                                break
+                            
+                if gender == None:
+                    unaccented_checking_text = unaccented_checking_text.strip()
+                    if unaccented_checking_text == "nam":
+                        gender = "Nam"
+                    elif unaccented_checking_text == "nu":
+                        gender = "Nữ"
+        print(gender)
         return gender, age
 
     
@@ -447,7 +476,7 @@ class KiePostProcess():
         # remain_field = []
         # for cls in self.LABEL_LIST:
         #     remain_field +=  self.get_raw_predicted(cls, self.predicted_kie_df)
-        remain_field, extracted_scores =  self.get_raw_predicted("document_type", self.predicted_kie_df) + self.get_raw_predicted("treatment", self.predicted_kie_df) + self.get_raw_predicted("note", self.predicted_kie_df)
+        remain_field, extracted_scores = self.get_raw_predicted("document_type", self.predicted_kie_df)
 
         for each, score in zip(remain_field, extracted_scores):
             list_exception = ["giayravien", "hoadonvienphi", "hoadonthuphi", "donthuoc", "giaychungnhanphauthuat", "bangke"]
@@ -484,14 +513,14 @@ class KiePostProcess():
         total_dates = []
         digit_total_dates = []
         total_dates_scores = []
-        admission_dates_out = admission_dates.copy()
-        discharge_dates_out = discharge_dates.copy()
+        admission_dates_out = None
+        discharge_dates_out = None
         
-        admission_dates_scores_out = admission_dates_scores.copy()
-        discharge_dates_scores_out = discharge_dates_scores.copy()
+        admission_dates_scores_out = None
+        discharge_dates_scores_out = None
         
-        temp_total_dates = admission_dates_out + discharge_dates_out
-        temp_total_dates_scores = admission_dates_scores_out + discharge_dates_scores_out
+        temp_total_dates = admission_dates.copy() + discharge_dates.copy()
+        temp_total_dates_scores = admission_dates_scores.copy() + discharge_dates_scores.copy()
         for each, score in zip(temp_total_dates, temp_total_dates_scores):
             if each not in total_dates:
                 d,m,y = each.split("/")
@@ -514,21 +543,25 @@ class KiePostProcess():
             discharge_dates_scores_out = sorted_dates[-1][2]
             
         elif len(total_dates) == 1:
-            if len(admission_dates_out) == 1:
-                d,m,y = admission_dates_out[0].split("/")
+            print("admission_dates", admission_dates)
+            print("discharge_dates", discharge_dates)
+            print("total_dates", total_dates)
+            print("len", len(total_dates))
+            if admission_dates != []:
+                d,m,y = admission_dates[0].split("/")
                 d = "{:02d}".format(int(d))
                 m = "{:02d}".format(int(m))
                 y = "{:04d}".format(int(y))
                 new_string_date = f"{d}/{m}/{y}"
-                admission_dates_out = [new_string_date]
-                admission_dates_scores_out = [admission_dates_scores[0]]
+                admission_dates_out = new_string_date
+                admission_dates_scores_out = admission_dates_scores
             else:
-                d,m,y = discharge_dates_out[0].split("/")
+                d,m,y = discharge_dates[0].split("/")
                 d = "{:02d}".format(int(d))
                 m = "{:02d}".format(int(m))
                 y = "{:04d}".format(int(y))
                 new_string_date = f"{d}/{m}/{y}"
-                discharge_dates_out = [new_string_date]
-                discharge_dates_scores_out = [discharge_dates_scores[0]]
+                discharge_dates_out = new_string_date
+                discharge_dates_scores_out = discharge_dates_scores
         return admission_dates_out, admission_dates_scores_out, discharge_dates_out, discharge_dates_scores_out
             

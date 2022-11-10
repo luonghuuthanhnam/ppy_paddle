@@ -11,6 +11,11 @@ import cv2
 # from tqdm.notebook import tqdm_notebook
 # from google.colab.patches import cv2_imshow
 from PIL import Image
+from pytesseract import Output
+import pytesseract
+import imutils
+import uuid
+import os
 
 class OrientationChecker():
     def __init__(self, model_path):

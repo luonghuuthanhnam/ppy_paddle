@@ -14,3 +14,6 @@ sudo apt-get -y install nvidia-cudnn
 
 #install poppler
 sudo apt-get install poppler-utils
+
+#install tesseract
+sudo apt-get install tesseract-ocr

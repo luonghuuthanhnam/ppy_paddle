@@ -8,6 +8,7 @@ import kie_gcn
 from kie_gcn import InvoiceGCN
 import postprocess
 import gc
+import copy
 
 # preprocessImage = preprocess_img.PreprocessImage()
 # lineDetAndOCR = LineOCR.ProcessImage()
@@ -80,7 +81,7 @@ class E2E_OCR_Engine():
                     "hospital_discharge_date_box": [],
                     "hospital_discharge_date_confidence": 0,
                     
-                    "icd_10": [],
+                    "icd_10": None,
 
                     "image_seals": "UN_CHECKED",
 
@@ -99,7 +100,7 @@ class E2E_OCR_Engine():
         return kie_df
     
     def postprocess_kie_df(self, kie_df):
-        full_extracted_result = self.empty_extracted_result.copy()
+        full_extracted_result = copy.deepcopy(self.empty_extracted_result)
         is_discharge_paper = False
         raw_text_lines = kie_df["Object"].to_list()
         for each_line in raw_text_lines:
@@ -145,8 +146,8 @@ class E2E_OCR_Engine():
             # print("age:", age)
 
             admissiion_dates, admissiion_dates_scores = self.kiePostprocess.admission_date_postprocess()
-            # for each in admissiion_dates:
-                # print("admissiion_date:", each)
+            for each in admissiion_dates:
+                print("admissiion_date:", each)
 
             discharge_dates, discharge_dates_scores = self.kiePostprocess.discharge_date_postprocess()
             # for each in discharge_dates:
@@ -173,14 +174,14 @@ class E2E_OCR_Engine():
                 main_extracted_result["gender"] = gender
                 main_extracted_result["gender_score"] = gender_score
             if age != None:
-                main_extracted_result["age"] = age
-                main_extracted_result["age_score"] = age_score
+                main_extracted_result["year_of_birth"] = age
+                main_extracted_result["year_of_birth_score"] = age_score
                 
-            main_extracted_result["admissiion_date"] = admissiion_dates
-            main_extracted_result["admissiion_date_score"] = admissiion_dates_scores
+            main_extracted_result["hospitalization_date"] = admissiion_dates
+            main_extracted_result["hospitalization_date_score"] = admissiion_dates_scores
             
-            main_extracted_result["discharge_date"] = discharge_dates
-            main_extracted_result["discharge_date_score"] = discharge_dates_scores
+            main_extracted_result["hospital_discharge_date"] = discharge_dates
+            main_extracted_result["hospital_discharge_date_score"] = discharge_dates_scores
             
             main_extracted_result["sign_date"] = sign_dates
             main_extracted_result["sign_date_score"] = sign_dates_scores
@@ -193,13 +194,14 @@ class E2E_OCR_Engine():
                     "score": -1
                 }
                 org_icd_code.append(temp_icd)
-            main_extracted_result["icd-10"] = org_icd_code
+            if org_icd_code == []:
+                org_icd_code = None
+            main_extracted_result["icd_10"] = org_icd_code
             full_extracted_result["data"][0]["info"] = main_extracted_result
 
         return full_extracted_result
 
     def __call__(self, cv2_img):
-        # cv2_img = cv2.imread(img_path)
         extracted_df = self.extract_discharge_paper_info(cv2_img)
         extracted_result = self.postprocess_kie_df(extracted_df)
         gc.collect()

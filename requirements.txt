@@ -11,3 +11,6 @@ unidecode
 fairseq
 fastbpe
 vncorenlp
+imutils
+pytesseract
+opencv-contrib-python
