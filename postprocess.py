@@ -67,7 +67,7 @@ class KiePostProcess():
         return shorten_patient_name.strip()
 
     def parse_date_with_re(self, raw_date):
-        pattern = "\d+[/-]\d+[/-]\d+"
+        pattern = "\d{1,2}[/-]\d{1,2}[/-]\d{2,4}"
         temp_date = raw_date.replace("\\","/")
         temp_date = raw_date.replace(" ","")
         temp_date = re.findall(pattern=pattern, string=temp_date)
@@ -166,7 +166,7 @@ class KiePostProcess():
                 age = int(age)/12
         
         raw_text_check = raw_text.replace(" ", "").lower()
-        for each in ["xnam", "namx" "xnữ", "nữx"]:
+        for each in ["xnam", "xnữ", "namx" ,"nữx"]:
             if gender != None:
                 break
             else:
@@ -287,7 +287,7 @@ class KiePostProcess():
             for each in self.GENDER_ANCHOR_LIST:
                 unaccented_checking_text = unaccented_checking_text.replace(each, "").replace(" ", "")
             
-                for each in ["xnam", "namx" "xnu", "nux"]:
+                for each in ["xnam", "xnu", "namx", "nux"]:
                     if gender != None:
                         break
                     else:
@@ -300,21 +300,21 @@ class KiePostProcess():
                                 break
                             
                 if gender == None:
-                    unaccented_checking_text = unaccented_checking_text.strip()
-                    if unaccented_checking_text == "nam":
+                    temp_unaccented_checking_text = unaccented_checking_text.strip().split()
+                    if temp_unaccented_checking_text[-1] == "nam":
                         gender = "Nam"
-                    elif unaccented_checking_text == "nu":
+                    elif temp_unaccented_checking_text[-1] == "nu":
                         gender = "Nữ"
         print(gender)
         return gender, age
 
-    
+
     def icd_code_parser(self, raw_diagnose):
         diagnose = " " + raw_diagnose + " "
         diagnose = diagnose.replace("ICD10", "ICD")
         diagnose = diagnose.replace("icd10", "icd")
-        first_pattern = '(?=([,:\- \[({;/]([a-zA-Z]{1}\d+.\d+)[.,:\- \])};/]))'
-        second_pattern = '(?=([,:\- \[({;/]([a-zA-Z]{1}\d+)[.,:\- \])};/]))'
+        first_pattern = '(?=([,:\- \[({;/]([a-zA-Z]{1}\d+.\d+)[*.,:\- \])};/]))'
+        second_pattern = '(?=([,:\- \[({;/]([a-zA-Z]{1}\d+)[*.,:\- \])};/]))'
         first_result = re.findall(first_pattern, diagnose)
         second_result = re.findall(second_pattern, diagnose)
 
