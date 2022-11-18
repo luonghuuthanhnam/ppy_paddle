@@ -156,7 +156,6 @@ class KiePostProcess():
     def check_mixed_age_gender(self, raw_text):
         age = None
         gender = None
-        print("raw_text", raw_text)
         parts = raw_text.split(":")
         list_number = re.findall(r'\d+', raw_text)
         if len(list_number)==1:
@@ -305,7 +304,6 @@ class KiePostProcess():
                         gender = "Nam"
                     elif temp_unaccented_checking_text[-1] == "nu":
                         gender = "Nữ"
-        print(gender)
         return gender, age
 
 
@@ -330,13 +328,84 @@ class KiePostProcess():
                 unique_icds.append(val)
         return unique_icds
 
+    
+    def CheckMergeHospitalNamevsORG(self, hospital_name):
+        simple_hospital_name = unidecode.unidecode(hospital_name).strip().lower()
+        simple_hospital_name = simple_hospital_name.replace(" ", "")
+        check_list = ["benhviendakhoatinh", "benhviendktinh", "bvdktinh", "benhviendakhoahuyen", "benhviendkhuyen", "bvdkhuyen",
+                      "benhviendakhoathanhpho", "benhviendkthanhpho", "bvdkthanhpho", "benhviendakhoatp", "benhviendakhoaquan",
+                      "benhviendakhoakhuvuc", "benhviendakhoa", "trungtamytehuyen", "trungtamyte", "ttythuyen", "ttytehuyen",
+                      "benhviensannhi", "benhviennhi", "benhvienphusan", "benhviensannhitinh", "benhvienphusantinh"]
+        new_hospital_name = None
+        if simple_hospital_name in check_list:
+            extracted_org, extracted_scores =  self.get_raw_predicted("org", self.predicted_kie_df, sort_top_down=False, return_xy=False)
+            extracted_org = extracted_org[0]
+            simple_org = unidecode.unidecode(extracted_org).lower()
+            org_remove_list = ["so y te", "uy ban nhan dan", "UBND"]
+            split_point = None
+            for each in org_remove_list:
+                if each in simple_org:
+                    start_point = simple_org.find(each)
+                    if start_point != -1:
+                        split_point = start_point + len(each)
+                    break
+            if split_point != None:
+                left_part = hospital_name.strip()
+                right_part = extracted_org[split_point:].strip()
+                left_elms = left_part.split(" ")
+                right_elms = right_part.split(" ")
+                if left_elms[-1].lower() == right_elms[0].lower() and len(right_elms) > 1:
+                    new_hospital_name = " ".join(left_elms) + " " + " ".join(right_elms[1:])
+                else:
+                    new_hospital_name = left_part + " " + right_part
+        if new_hospital_name == None:
+            new_hospital_name = hospital_name
+        return new_hospital_name
+
+    def remove_false_hospital_name(self, extracted_hospital_name:list):
+        true_list = ["benhvien", "dakhoa", "ttyt", "trungtam", "tramyte", "bv", "dk", "cotruyen", "vien"]
+        false_list = ["soyte", "khoa", "ubnd", "ms", "conghoaxahoi", "luu tru", "ma so"]
+        reduced_extracted_hospital_name = []
+        if len(extracted_hospital_name) >0:
+            for each in extracted_hospital_name:
+                simple_each = unidecode.unidecode(each).lower().replace(" ","")
+                added_flag = False
+                for true_elm in true_list:
+                    if true_elm in simple_each:
+                        reduced_extracted_hospital_name.append(each)
+                        added_flag = True
+                        break
+        
+                if added_flag==False:
+                    for false_elm in false_list:
+                        if false_elm in simple_each:
+                            added_flag = True
+                            break
+                if added_flag == False:
+                    reduced_extracted_hospital_name.append(each)
+        start_idx = 0
+        if len(reduced_extracted_hospital_name) >1:
+            break_flag = False
+            for idx, each in enumerate(reduced_extracted_hospital_name):
+                simple_each = unidecode.unidecode(each).lower().replace(" ","")
+                for true_elm in true_list:
+                    if true_elm in simple_each:
+                        start_idx = idx
+                        break_flag = True
+                        break
+                if break_flag == True:
+                    break
+        reduced_extracted_hospital_name = reduced_extracted_hospital_name[start_idx:]
+        return reduced_extracted_hospital_name
+
     def hospital_name_postprocess(self):
         extracted_hospital_name, extracted_scores, (xmax, xmin, ymax, ymin) =  self.get_raw_predicted("hospital_name", self.predicted_kie_df, sort_top_down=True, return_xy=True)
+        clean_extracted_hospital_name = self.remove_false_hospital_name(extracted_hospital_name)
         merged_hospital_name = None
-        if len(extracted_hospital_name) >0:
-            merged_hospital_name = extracted_hospital_name[0]
-            if len(extracted_hospital_name)>1:
-                for i in range(1, len(extracted_hospital_name)):
+        if len(clean_extracted_hospital_name) >0:
+            merged_hospital_name = clean_extracted_hospital_name[0]
+            if len(clean_extracted_hospital_name)>1:
+                for i in range(1, len(clean_extracted_hospital_name)):
                     cur_cen_x = int((xmax[i] + xmin[i])/2)
                     cur_cen_y = int((ymax[i] + ymin[i])/2)
                     pre_cen_x = int((xmax[i] + xmin[i-1])/2)
@@ -344,9 +413,12 @@ class KiePostProcess():
                     x_dis = np.abs(cur_cen_x - pre_cen_x)
                     y_dis = np.abs(cur_cen_y - pre_cen_y)
                     if x_dis <= 100 and y_dis <= 50:
-                        merged_hospital_name += f" {extracted_hospital_name[i]}" 
+                        merged_hospital_name += f" {clean_extracted_hospital_name[i]}"
         mean_score = np.mean(np.array(extracted_scores))
+        if merged_hospital_name != None:
+            merged_hospital_name = self.CheckMergeHospitalNamevsORG(merged_hospital_name)
         return merged_hospital_name, mean_score
+
 
     def patient_name_postprocess(self):
         extracted_patient_names, extraced_scores =  self.get_raw_predicted("patient_name", self.predicted_kie_df)
@@ -543,10 +615,6 @@ class KiePostProcess():
             discharge_dates_scores_out = sorted_dates[-1][2]
             
         elif len(total_dates) == 1:
-            print("admission_dates", admission_dates)
-            print("discharge_dates", discharge_dates)
-            print("total_dates", total_dates)
-            print("len", len(total_dates))
             if admission_dates != []:
                 d,m,y = admission_dates[0].split("/")
                 d = "{:02d}".format(int(d))

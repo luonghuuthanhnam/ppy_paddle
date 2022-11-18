@@ -48,6 +48,7 @@ ID2LABEL_DICT = {
     12:"department",
     13:"note",
     14:"BHYT",
+    15:"org",
 }
 
 class InvoiceGCN(nn.Module):
@@ -246,7 +247,7 @@ class KieGCN():
 class KieGCN_v2():
     def __init__(self, 
             PhoBERT_base_fairseq_dir = 'weights/nlp/PhoBERT_base_fairseq',
-            PhoBERT_trained_state_dict_path = 'weights/nlp/phoBert_trained_state_dict/phoBert_state_dict_221101.pth',
+            PhoBERT_trained_state_dict_path = 'weights/nlp/phoBert_trained_state_dict/phoBert_state_dict_221117.pth',
             gcn_state_dict_path =  "weights/gcn/GCN_221103_state_dict.pth"
             ) -> None:
      
@@ -270,14 +271,15 @@ class KieGCN_v2():
         ]
         self.temp_dir = "temp_data/temp_gcn/"
         # os.chdir('../../../')
-        self.gcn_model = InvoiceGCN(input_dim=778, chebnet=True, n_classes =15, dropout_rate = 0.2, K=3)
+        n_classes =16
+        self.gcn_model = InvoiceGCN(input_dim=778, chebnet=True, n_classes =n_classes, dropout_rate = 0.2, K=3)
         self.gcn_model.load_state_dict(torch.load(gcn_state_dict_path))
         # self.gcn_model = torch.load(gcn_model_path)
         self.gcn_model.to(self.device)
         self.gcn_model.eval()
 
     def load_custom_phoBert(self, phoBert_base_fairseq_dir, PhoBERT_trained_state_dict_path):
-        num_classes = 13
+        num_classes = 14
         phoBERT_cls = RobertaModel.from_pretrained( phoBert_base_fairseq_dir , checkpoint_file='model.pt')
 
         # Load BPE

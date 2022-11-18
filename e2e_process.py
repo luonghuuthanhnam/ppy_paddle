@@ -31,7 +31,7 @@ class E2E_OCR_Engine():
         self.lineDetAndOCR = LineOCR.ProcessImage(detection_model_path=detection_model_path, text_recognition_model_path = text_recognition_model_path)
         # self.kieGCN = kie_gcn.KieGCN(gcn_model_path=gcn_model_path)
         self.kieGCN = kie_gcn.KieGCN_v2(PhoBERT_base_fairseq_dir="weights/nlp/PhoBERT_base_fairseq",
-                                        PhoBERT_trained_state_dict_path="weights/nlp/phoBert_trained_state_dict/phoBert_state_dict_221101.pth",
+                                        PhoBERT_trained_state_dict_path="weights/nlp/phoBert_trained_state_dict/phoBert_state_dict_221117.pth",
                                         gcn_state_dict_path=gcn_state_dict_path)
         self.kiePostprocess = postprocess.KiePostProcess()
         # self.empty_extracted_result = {

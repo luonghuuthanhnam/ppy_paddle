@@ -80,6 +80,7 @@ class ProcessImage():
     
     def crop_line(self, rotated_img, points, convert_gray):
         original = Image.fromarray(rotated_img.copy())
+        
         polygon = []
         for pair in points:
             polygon.append(tuple(map(int,pair)))
@@ -103,8 +104,27 @@ class ProcessImage():
 
     def crop_line_v2(self, rotated_img, points, convert_gray):
         # original = Image.fromarray(rotated_img.copy())
+        img_height, img_width, channels = rotated_img.shape
         original = rotated_img.copy()
+        
+        points[0][1] = int(points[0][1]) - 5
+        if points[0][1] <= 0:
+            points[0][1] = 0
+        
+        points[1][1] = int(points[1][1]) - 5
+        if points[1][1] < 0:
+            points[1][1] = 0
+        
+        points[2][1] = int(points[2][1]) + 5
+        if points[2][1] > img_height:
+            points[2][1] = img_height
+        
+        points[3][1] = int(points[3][1]) + 5
+        if points[3][1] > img_height:
+            points[3][1] = img_height
+        
         polygon = []
+
         for pair in points:
             polygon.append(tuple(map(int,pair)))
 

@@ -29,11 +29,11 @@ orientationChecker = OrientationChecker( model_path= "./weights/orientation/invo
 e2e_OCR_Engine = e2e_process.E2E_OCR_Engine(
     detection_model_path="PaddleOCR/pretrained_models/det_db_inference_221110",
     text_recognition_model_path="./weights/ocr/ocr_221026.pth",
-    gcn_state_dict_path="./weights/gcn/GCN_221103_state_dict.pth"
+    gcn_state_dict_path="./weights/gcn/GCN_221117_state_dict.pth"
 )
 print(f"*****Models has been uploaded successfully in {time.time() - load_model_time} s*****")
 
-def extract_discharge_paper(object_name):
+def extract_discharge_paper(object_name, return_df = False):
     s_time = time.time()
     image = downandLoadImage(object_name)
     print("download time: ", time.time() - s_time)
@@ -43,7 +43,10 @@ def extract_discharge_paper(object_name):
     result, extracted_df = e2e_OCR_Engine(rotated_img)
     torch.cuda.empty_cache()
     gc.collect()
-    return result
+    if return_df == True:
+        return result, extracted_df
+    else:
+        return result
 
 @app.get("/")
 def read_root():
@@ -55,3 +58,17 @@ async def ocr_handeler(data: ObjectName):
     print(data.obj_name)
     result = extract_discharge_paper(data.obj_name)
     return result
+
+@app.post("/OCR/DischargePaper/Dev")
+async def ocr_handeler(data: ObjectName):
+    print(data.obj_name)
+    result, extracted_df = extract_discharge_paper(data.obj_name, return_df=True)
+    extracted_dict = extracted_df.to_dict()
+    total_result = {
+        "result":result,
+        "extracted_dict":extracted_dict
+    }
+    return total_result
+
+# https://drive.google.com/file/d/1QDxM_TSRI8GXwPpkY-vn_wrBK1ywC9fn/view?usp=share_link
+# !gdown "https://drive.google.com/uc?id=1QDxM_TSRI8GXwPpkY-vn_wrBK1ywC9fn"
