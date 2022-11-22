@@ -25,7 +25,7 @@ app = FastAPI()
 
 print("*****Loading models...*****")
 load_model_time = time.time()
-orientationChecker = OrientationChecker( model_path= "./weights/orientation/invoice_rotation_220920.pth")
+orientationChecker = OrientationChecker( model_path= "./weights/orientation/invoice_rotation_221122.pth")
 e2e_OCR_Engine = e2e_process.E2E_OCR_Engine(
     detection_model_path="PaddleOCR/pretrained_models/det_db_inference_221110",
     text_recognition_model_path="./weights/ocr/ocr_221026.pth",
@@ -38,8 +38,8 @@ def extract_discharge_paper(object_name, return_df = False):
     image = downandLoadImage(object_name)
     print("download time: ", time.time() - s_time)
     # image = cv2.imread(img_path)
-    rotated_img, pred_class = orientationChecker(image)
-    print("orientation:", pred_class)
+    rotated_img, pred_class, prob = orientationChecker(image)
+    print("orientation:", pred_class, prob)
     result, extracted_df = e2e_OCR_Engine(rotated_img)
     torch.cuda.empty_cache()
     gc.collect()

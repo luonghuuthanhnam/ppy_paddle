@@ -12,6 +12,8 @@ import time
 import re
 from turtle import fillcolor
 import itertools
+import copy
+from scipy import ndimage
 
 # config = Cfg.load_config_from_name("vgg_seq2seq")
 # config.save("default_vgg_seq2seq_config.yml")
@@ -165,6 +167,8 @@ class ProcessImage():
         for line in lines:
             croped, _points = self.crop_line_v2(rotated_img, line, convert_gray)
             polygon, xmin, xmax, ymin, ymax = _points
+            croped = self.single_rotate_and_transpose(np.array(croped), polygon)
+            croped = Image.fromarray(croped)
             extracted_dict["polygon"].append(polygon)
             extracted_dict["bbox"].append((int(xmin), int(ymin), int(xmax), int(ymax)))
             extracted_dict["croped_pil_img"].append(croped)
@@ -200,3 +204,76 @@ class ProcessImage():
     def individual_OCR(self, pil_line_img):
         text, prob = self.text_recognizer.predict(pil_line_img, return_prob=True)
         return text, prob
+    
+    def rec_transpose(self, rotate_angle, raw_cv2_img, rotated_cv2_image, rec):
+        raw_img = raw_cv2_img.copy()
+        raw_height, raw_width = raw_img.shape[:2]
+        x_cen = round(raw_width/2)
+        y_cen = round(raw_height/2)
+        rotated_rec = []
+        # rotated_cv2_image = ndimage.rotate(raw_img, -rotate_angle, cval=255)
+        new_height, new_width = rotated_cv2_image.shape[:2]
+        new_height_cen = round(new_height/2)
+        new_width_cen = round(new_width/2)
+        for each in rec:
+            cur_x, cur_y = each[:]
+            r_y = y_cen - cur_y
+            r_x = x_cen - cur_x
+            a1 = np.arctan2(r_y, r_x)
+            d = np.sqrt(r_y**2 + r_x**2)
+            a2 = a1 + np.radians(rotate_angle)
+            r_y2 = d * np.sin(a2)
+            r_x2 = d * np.cos(a2)
+            x2 = round(new_width_cen - r_x2)
+            y2 = round(new_height_cen - r_y2)
+            rotated_rec.append([x2, y2])
+        return rotated_rec
+
+    def angle_between(self, p1, p2):
+        x1,y1 = p1
+        x2,y2 = p2
+        tan_a = (y2 - y1)/(x2-x1)
+        angle = np.arctan(tan_a)
+        return np.rad2deg(angle)
+
+    def single_rotate_and_transpose(self, raw_img, points):
+        p1, p2, p3, p4 = points
+        angle = self.angle_between(p3, p4)
+        rotate_angle = angle
+        rorated_img = ndimage.rotate(raw_img.copy(), rotate_angle, cval=255)
+        temp_rotated_img = rorated_img.copy()
+        rec = points
+        xs = [each[0] for each in points]
+        ys = [each[1] for each in points]
+        xmin = min(xs)
+        ymin = min(ys)
+        xs = [each - xmin for each in xs]
+        ys = [each -ymin for each in ys]
+        rec = [[x,y] for x,y in zip(xs, ys)]
+        # print(rec)
+        new_rec = self.rec_transpose(-rotate_angle, raw_img.copy(), temp_rotated_img.copy(), rec)
+        xs = [each[0] for each in new_rec]
+        ys = [each[1] for each in new_rec]
+        xmin = min(xs)
+        xmax = max(xs)
+        ymin = min(ys)
+        ymax = max(ys)
+        roi = temp_rotated_img[ymin:ymax, xmin:xmax]
+        return roi
+
+    def rotate_and_transpose(self, raw_img, anno_value, rotate_angle, img_root_dir = "data/"):
+        rorated_img = ndimage.rotate(raw_img.copy(), -rotate_angle, cval=255)
+        temp_rotated_img = rorated_img.copy()
+        temp_raw_img = raw_img.copy()
+        transposed_anno = copy.deepcopy(anno_value)
+        for idx, each in enumerate(anno_value):
+            rec = np.array(each["points"])
+            
+            temp_raw_img = cv2.polylines(temp_raw_img, [rec],
+                            True, (255,0,0), 3)
+            new_rec = self.rec_transpose(rotate_angle, raw_img.copy(), temp_rotated_img.copy(), rec)
+            new_rec = np.array(new_rec)
+            # temp_rotated_img = cv2.polylines(temp_rotated_img, [new_rec],
+            #                 True, (255,0,0), 3)
+            transposed_anno[idx]["points"] = new_rec.tolist()
+        return rorated_img, transposed_anno

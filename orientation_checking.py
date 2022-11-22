@@ -5,6 +5,7 @@ import torch.nn as nn
 # from torch.optim import lr_scheduler
 import numpy as np
 from torchvision import models, transforms
+import torch.nn.functional as F
 # import matplotlib.pyplot as plt
 # import time
 import cv2
@@ -16,18 +17,28 @@ import pytesseract
 import imutils
 import uuid
 import os
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 class OrientationChecker():
     def __init__(self, model_path):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu").type
         self.model_path = model_path
         self.test_transforms = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
+        transforms.Resize(512),
+        # transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-        self.class_names = ['down', 'left', 'right', 'up']
+        
+        # self.test_transforms = A.Compose(
+        #     [
+        #         A.Resize(512,512),
+        #         A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+        #         ToTensorV2(),
+        #     ]
+        # )
+        self.class_names = ['up', 'left', 'right', 'down']
         self.model = self.load_rotation_checking_model(self.model_path, self.device)
     
     def load_rotation_checking_model(self, model_path, device, is_train = False):
@@ -53,10 +64,13 @@ class OrientationChecker():
         X = X.unsqueeze_(0)
         X = X.to(self.device)
         pred_class = "up"
+        self.prob = 0
         with torch.no_grad():
             outputs = self.model(X.float())
+            probs = F.softmax(outputs, dim=1)[0]
             _, preds = torch.max(outputs, 1)
             pred_class = self.class_names[preds]
+            self.prob = probs[preds[0].item()].item()
 
         cv2_img = np.array(img)
         cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
@@ -64,13 +78,13 @@ class OrientationChecker():
             cv2_img = cv2.rotate(cv2_img, cv2.ROTATE_90_CLOCKWISE)
         elif pred_class == "right":
             cv2_img = cv2.rotate(cv2_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        # elif pred_class == "down":
-        #     cv2_img = cv2.rotate(cv2_img, cv2.ROTATE_180)
+        elif pred_class == "down":
+            cv2_img = cv2.rotate(cv2_img, cv2.ROTATE_180)
         # elif pred_class == "up":
-        #     return img, pred_class
+        #     return cv2_img, pred_class, self.prob
 
         if is_cv2:
             cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
-            return cv2_img, pred_class
+            return cv2_img, pred_class, self.prob
         else:
-            return Image.fromarray(cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)), pred_class
+            return Image.fromarray(cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)), pred_class, self.prob
