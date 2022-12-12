@@ -339,7 +339,10 @@ class KiePostProcess():
         new_hospital_name = None
         if simple_hospital_name in check_list:
             extracted_org, extracted_scores =  self.get_raw_predicted("org", self.predicted_kie_df, sort_top_down=False, return_xy=False)
-            extracted_org = extracted_org[0]
+            if len(extracted_org)>0:
+                extracted_org = extracted_org[0]
+            else:
+                extracted_org = ""
             simple_org = unidecode.unidecode(extracted_org).lower()
             org_remove_list = ["so y te", "uy ban nhan dan", "UBND"]
             split_point = None
@@ -419,7 +422,41 @@ class KiePostProcess():
             merged_hospital_name = self.CheckMergeHospitalNamevsORG(merged_hospital_name)
         return merged_hospital_name, mean_score
 
-
+    def patient_family_name_correction(self, full_name):
+        CORRECTING_FAMILY_NAME = {
+            "nguyen": "nguyễn",
+            "tran": "trần",
+            "le": "lê",
+            "pham": "phạm",
+            "phan": "phan",
+            "huynh": "huỳnh",
+            "hoang": "hoàng",
+            "vu": "vũ",
+            "vo": "võ",
+            "dang": "đặng",
+            "bui": "bùi",
+            "do": "đỗ",
+            "ho": "hồ",
+            "ngo": "ngô",
+        }
+        raw_family_name = full_name.split(" ")[0]
+        raw_name_remain = full_name.split(" ")[1:]
+        try:
+            retrieved_family_name = CORRECTING_FAMILY_NAME[unidecode.unidecode(raw_family_name).lower()]
+            corrected_family_name = []
+            for char_raw, char_re in zip(raw_family_name, retrieved_family_name):
+                save_char = char_re
+                if char_raw.isupper():
+                    save_char = char_re.upper()
+                corrected_family_name.append(save_char)
+            corrected_family_name = "".join(corrected_family_name)
+        except:
+            corrected_family_name = raw_family_name
+        
+        corrected_name = " ".join([corrected_family_name] + raw_name_remain)
+        return corrected_name
+        
+        
     def patient_name_postprocess(self):
         extracted_patient_names, extraced_scores =  self.get_raw_predicted("patient_name", self.predicted_kie_df)
         patient_name = None

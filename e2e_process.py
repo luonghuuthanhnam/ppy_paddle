@@ -24,7 +24,7 @@ import copy
 
 class E2E_OCR_Engine():
     def __init__(self,
-            detection_model_path = "PaddleOCR/pretrained_models/exported_det_model_221011/",
+            detection_model_path = "PaddleOCR/pretrained_models/det_r50_td_tr_inference_221206/",
             text_recognition_model_path = "./weights/ocr/line_ocr_220930_3.pth",
             gcn_state_dict_path = "weights/gcn/GCN_221103_state_dict.pth") -> None:
         self.preprocessImage = preprocess_img.PreprocessImage()

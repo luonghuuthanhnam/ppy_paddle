@@ -28,7 +28,7 @@ class ProcessImage():
     '''
     # /content/drive/MyDrive/PPY/DischargePaper/LineDetection/Paddle/Pretrained/exported_det_model_221011/
     def __init__(self,
-                 detection_model_path = "./PaddleOCR/pretrained_models/exported_det_model_221011/",
+                 detection_model_path = "./PaddleOCR/pretrained_models/det_r50_td_tr_inference_221206/",
                  text_recognition_model_config_file = "./default_vgg_seq2seq_config.yml",
                  text_recognition_model_path = "./weights/ocr/line_ocr_220930_3.pth"):
         # self.line_detector = PaddleOCR(use_angle_cls=True, lang='en', det_model_dir = detection_model_path, use_gpu = True, det_algorithm="PSE")
@@ -104,11 +104,14 @@ class ProcessImage():
             croped = self.text_line_equalization(croped)
         return croped, (polygon, xmin, xmax, ymin, ymax)
 
-    def crop_line_v2(self, rotated_img, points, convert_gray):
+    def crop_line_v2(self, rotated_img, raw_points, convert_gray):
+        points = copy.deepcopy(raw_points)
         # original = Image.fromarray(rotated_img.copy())
         img_height, img_width, channels = rotated_img.shape
         original = rotated_img.copy()
         
+        
+        #expand height
         points[0][1] = int(points[0][1]) - 5
         if points[0][1] <= 0:
             points[0][1] = 0
@@ -125,10 +128,33 @@ class ProcessImage():
         if points[3][1] > img_height:
             points[3][1] = img_height
         
+        
+        #expand width
+        points[0][0] = int(points[0][0]) - 5 #top_left -5
+        if points[0][0] <= 0:
+            points[0][0] = 0
+            
+        points[1][0] = int(points[1][0]) + 5  #top_right +5
+        if points[1][0] > img_width:
+            points[1][0] = img_width
+            
+        points[2][0] = int(points[2][0]) + 5 #bottom_right +5
+        if points[2][0] > img_width:
+            points[2][0] = img_width
+            
+        points[3][0] = int(points[3][0]) - 5 #bottom_left -5
+        if points[3][0] <= 0:
+            points[3][0] = 0
+        
+        
         polygon = []
 
         for pair in points:
             polygon.append(tuple(map(int,pair)))
+            
+        raw_polygon = []
+        for pair in raw_points:
+            raw_polygon.append(tuple(map(int,pair)))
 
         list_x = [x for x,y in polygon]
         list_y = [y for x,y in polygon]
@@ -156,7 +182,7 @@ class ProcessImage():
         if convert_gray == True:
             croped_mask = self.text_line_equalization(croped_mask)
         pil_croped_mask = Image.fromarray(croped_mask)
-        return pil_croped_mask, (polygon, xmin, xmax, ymin, ymax)
+        return pil_croped_mask, (raw_polygon, polygon, xmin, xmax, ymin, ymax)
 
     def extract_lines(self, lines, rotated_img, convert_gray = True):
         extracted_dict = {
@@ -166,10 +192,10 @@ class ProcessImage():
         }
         for line in lines:
             croped, _points = self.crop_line_v2(rotated_img, line, convert_gray)
-            polygon, xmin, xmax, ymin, ymax = _points
+            raw_polygon, polygon, xmin, xmax, ymin, ymax = _points
             croped = self.single_rotate_and_transpose(np.array(croped), polygon)
             croped = Image.fromarray(croped)
-            extracted_dict["polygon"].append(polygon)
+            extracted_dict["polygon"].append(raw_polygon)
             extracted_dict["bbox"].append((int(xmin), int(ymin), int(xmax), int(ymax)))
             extracted_dict["croped_pil_img"].append(croped)
         return extracted_dict

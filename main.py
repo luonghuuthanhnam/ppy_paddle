@@ -25,9 +25,9 @@ app = FastAPI()
 
 print("*****Loading models...*****")
 load_model_time = time.time()
-orientationChecker = OrientationChecker( model_path= "./weights/orientation/invoice_rotation_221122.pth")
+orientationChecker = OrientationChecker( model_path= "./weights/orientation/invoice_rotation_221212.pth")
 e2e_OCR_Engine = e2e_process.E2E_OCR_Engine(
-    detection_model_path="PaddleOCR/pretrained_models/det_db_inference_221110",
+    detection_model_path="PaddleOCR/pretrained_models/det_r50_td_tr_inference_221209",
     text_recognition_model_path="./weights/ocr/line_ocr_221122.pth",
     gcn_state_dict_path="./weights/gcn/GCN_221117_state_dict.pth"
 )

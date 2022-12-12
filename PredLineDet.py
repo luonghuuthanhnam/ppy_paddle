@@ -15,7 +15,10 @@ class LineDetInfer():
     def __init__(self, det_model_dir  = "PaddleOCR/pretrained_models/exported_det_model_221011/") -> None:
         self.args = utility.parse_args()
         self.args.det_model_dir = det_model_dir
-        self.args.det_algorithm = "PSE"
+        self.args.det_algorithm = "DB++"
+        
+        # print("FFFFF: \n",self.args)
+        self.args.det_db_box_thresh = 0.3
         self.text_detector = predict_det.TextDetector(self.args)
 
 
