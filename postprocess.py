@@ -438,23 +438,28 @@ class KiePostProcess():
             "do": "đỗ",
             "ho": "hồ",
             "ngo": "ngô",
+            "dinh": "đinh",
         }
-        raw_family_name = full_name.split(" ")[0]
-        raw_name_remain = full_name.split(" ")[1:]
-        try:
-            retrieved_family_name = CORRECTING_FAMILY_NAME[unidecode.unidecode(raw_family_name).lower()]
-            corrected_family_name = []
-            for char_raw, char_re in zip(raw_family_name, retrieved_family_name):
-                save_char = char_re
-                if char_raw.isupper():
-                    save_char = char_re.upper()
-                corrected_family_name.append(save_char)
-            corrected_family_name = "".join(corrected_family_name)
-        except:
-            corrected_family_name = raw_family_name
+        if full_name != None:
+            raw_family_name = full_name.split(" ")[0]
+            raw_name_remain = full_name.split(" ")[1:]
+            try:
+                retrieved_family_name = CORRECTING_FAMILY_NAME[unidecode.unidecode(raw_family_name).lower()]
+                corrected_family_name = []
+                for char_raw, char_re in zip(raw_family_name, retrieved_family_name):
+                    save_char = char_re
+                    if char_raw.isupper():
+                        save_char = char_re.upper()
+                    corrected_family_name.append(save_char)
+                corrected_family_name = "".join(corrected_family_name)
+            except:
+                corrected_family_name = raw_family_name
+            
+            corrected_name = " ".join([corrected_family_name] + raw_name_remain)
+            return corrected_name
+        else:
+            return None
         
-        corrected_name = " ".join([corrected_family_name] + raw_name_remain)
-        return corrected_name
         
         
     def patient_name_postprocess(self):
@@ -464,6 +469,7 @@ class KiePostProcess():
         if len(extracted_patient_names)>0:
             patient_name = self.patient_name_regularization(extracted_patient_names[0])
             extraced_score = extraced_scores[0]
+        patient_name = self.patient_family_name_correction(patient_name)
         return patient_name, extraced_score
 
     def age_postprocess(self):

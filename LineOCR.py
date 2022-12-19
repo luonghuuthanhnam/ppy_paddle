@@ -253,10 +253,10 @@ class ProcessImage():
             x2 = round(new_width_cen - r_x2)
             y2 = round(new_height_cen - r_y2)
             if x2 < 0:
-                print("ERROR x=", x2)
+                # print("ERROR x=", x2)
                 x2 = 0
             if y2 < 0:
-                print("ERROR y=", y2)
+                # print("ERROR y=", y2)
                 y2 = 0
             rotated_rec.append([x2, y2])
         return rotated_rec

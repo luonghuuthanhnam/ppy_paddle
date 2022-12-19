@@ -31,7 +31,9 @@ class Grapher:
         image_path = os.path.join(self.data_fd, "img", filename + '.jpg')
         # self.df = pd.read_csv(file_path, header=None, sep='\n')
         self.df = pd.read_excel(file_path, index_col=0)
-        self.image = cv2.imread(image_path)
+        # self.image = cv2.imread(image_path)
+        self.img_width = self.df["img_width"][0]
+        self.img_height = self.df["img_height"][0]
         self.df_withlabels = pd.read_excel(interim_path, index_col=0)
 
     def graph_formation(self, export_graph = False):
@@ -71,7 +73,8 @@ class Grapher:
         remember that the axes are inverted.
       
         """
-        df, image = self.df, self.image
+        # df, image = self.df, self.image
+        df = self.df
         """
         preprocessing the raw csv files to favorable df
         """
@@ -92,10 +95,10 @@ class Grapher:
         df = df[['xmin','ymin','xmax','ymax', 'Object', 'labels', 'polygon']]
         df[['xmin','ymin','xmax','ymax']] = df[['xmin','ymin','xmax','ymax']].apply(pd.to_numeric)
         
-        assert type(df) == pd.DataFrame,f'object_map should be of type \
-            {pd.DataFrame}. Received {type(df)}'
-        assert type(image) == np.ndarray,f'image should be of type {np.ndarray} \
-            . Received {type(image)}'
+        # assert type(df) == pd.DataFrame,f'object_map should be of type \
+        #     {pd.DataFrame}. Received {type(df)}'
+        # assert type(image) == np.ndarray,f'image should be of type {np.ndarray} \
+        #     . Received {type(image)}'
         
         assert 'xmin' in df.columns, '"xmin" not in object map'
         assert 'xmax' in df.columns, '"xmax" not in object map'
@@ -322,7 +325,7 @@ class Grapher:
         df['n_upper'],df['n_alpha'],df['n_spaces'],\
         df['n_numeric'],df['n_special'] = n_upper, n_alpha, n_spaces, n_numeric,n_special
 
-    def relative_distance(self, export_document_graph = False):
+    def relative_distance(self, export_document_graph = False, cv2_img = None):
         """ 
         1) Calculates relative distances for each node in left, right, top  and bottom directions if they exist.
         rd_l, rd_r = relative distances left , relative distances right. The distances are divided by image width
@@ -337,8 +340,9 @@ class Grapher:
             dataframe with features and exports document graph if prompted
         """
 
-        df, img = self.df, self.image
-        image_height, image_width = self.image.shape[0], self.image.shape[1]
+        # df, img = self.df, self.image
+        df, img = self.df, cv2_img
+        image_height, image_width = self.img_height, self.img_width
         plot_df = df.copy() 
 
         for index in df['index'].to_list():

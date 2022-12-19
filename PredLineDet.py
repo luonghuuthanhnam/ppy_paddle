@@ -18,7 +18,7 @@ class LineDetInfer():
         self.args.det_algorithm = "DB++"
         
         # print("FFFFF: \n",self.args)
-        self.args.det_db_box_thresh = 0.3
+        self.args.det_db_box_thresh = 0.2
         self.text_detector = predict_det.TextDetector(self.args)
 
 

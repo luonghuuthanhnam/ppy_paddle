@@ -316,6 +316,7 @@ class KieGCN_v2():
             list_ymax.append(ymax)
             list_Object.append(text)
             list_polygon.append(polygon)
+        im_height, im_width, _ = cv2_img.shape
         single_df = {
             "xmin": list_xmin,
             "xmax": list_xmax,
@@ -324,11 +325,13 @@ class KieGCN_v2():
             "Object": list_Object,
             "labels": ["None"]*len(list_Object),
             "polygon": list_polygon,
+            "img_width": [im_width]*len(list_Object),
+            "img_height": [im_height]*len(list_Object),
         }
         temp_file_name = str(uuid.uuid4())
         single_df = pd.DataFrame.from_dict(single_df)
         single_df.to_excel(f"temp_data/temp_gcn/csv/{temp_file_name}.xlsx")
-        cv2.imwrite(f"temp_data/temp_gcn/img/{temp_file_name}.jpg", cv2_img)
+        # cv2.imwrite(f"temp_data/temp_gcn/img/{temp_file_name}.jpg", cv2_img)
         return temp_file_name 
         
 
@@ -421,6 +424,6 @@ class KieGCN_v2():
         temp_img_path = f"./{self.temp_dir}img/{temp_file_name}.jpg"
         if os.path.exists(temp_xlsx_path):
             os.remove(temp_xlsx_path)
-        if os.path.exists(temp_img_path):
-            os.remove(temp_img_path)
+        # if os.path.exists(temp_img_path):
+        #     os.remove(temp_img_path)
         return predicted_df

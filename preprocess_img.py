@@ -88,8 +88,8 @@ class PreprocessImage():
                 image = image.resize(dim, Image.ANTIALIAS)
             else:
                 image = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
-
-        return image, ratio
+        
+        return image, (width, height)
 
     def auto_rotate(self, input_image):
         '''
@@ -130,6 +130,6 @@ class PreprocessImage():
 
     def __call__(self, raw_img) -> np.array:
         img = raw_img.copy()
-        img, ratio = self.resize_image(input_image=img)
+        img, dim = self.resize_image(input_image=img)
         img, median_angle = self.auto_rotate(input_image=img)
-        return img
+        return img, dim, median_angle

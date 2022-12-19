@@ -26,9 +26,10 @@ app = FastAPI()
 print("*****Loading models...*****")
 load_model_time = time.time()
 orientationChecker = OrientationChecker( model_path= "./weights/orientation/invoice_rotation_221212.pth")
+preprocessImage = preprocess_img.PreprocessImage()
 e2e_OCR_Engine = e2e_process.E2E_OCR_Engine(
     detection_model_path="PaddleOCR/pretrained_models/det_r50_td_tr_inference_221209",
-    text_recognition_model_path="./weights/ocr/line_ocr_221122.pth",
+    text_recognition_model_path="./weights/ocr/line_ocr_221214.pth",
     gcn_state_dict_path="./weights/gcn/GCN_221117_state_dict.pth"
 )
 print(f"*****Models has been uploaded successfully in {time.time() - load_model_time} s*****")
@@ -40,7 +41,15 @@ def extract_discharge_paper(object_name, return_df = False):
     # image = cv2.imread(img_path)
     rotated_img, pred_class, prob = orientationChecker(image)
     print("orientation:", pred_class, prob)
-    result, extracted_df = e2e_OCR_Engine(rotated_img)
+    
+    process_img, (new_width, new_height), median_angle = preprocessImage(rotated_img)
+    result, extracted_df = e2e_OCR_Engine(process_img)
+    result["preprocess_info"]["new_width"]  = new_width
+    result["preprocess_info"]["new_height"]  = new_height
+    result["preprocess_info"]["rotation_angle"]  = median_angle
+    result["preprocess_info"]["orientation"]["predicted_class"]  = pred_class
+    result["preprocess_info"]["orientation"]["score"]  = prob
+    
     torch.cuda.empty_cache()
     gc.collect()
     if return_df == True:

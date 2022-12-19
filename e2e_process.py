@@ -27,7 +27,6 @@ class E2E_OCR_Engine():
             detection_model_path = "PaddleOCR/pretrained_models/det_r50_td_tr_inference_221206/",
             text_recognition_model_path = "./weights/ocr/line_ocr_220930_3.pth",
             gcn_state_dict_path = "weights/gcn/GCN_221103_state_dict.pth") -> None:
-        self.preprocessImage = preprocess_img.PreprocessImage()
         self.lineDetAndOCR = LineOCR.ProcessImage(detection_model_path=detection_model_path, text_recognition_model_path = text_recognition_model_path)
         # self.kieGCN = kie_gcn.KieGCN(gcn_model_path=gcn_model_path)
         self.kieGCN = kie_gcn.KieGCN_v2(PhoBERT_base_fairseq_dir="weights/nlp/PhoBERT_base_fairseq",
@@ -89,12 +88,21 @@ class E2E_OCR_Engine():
             "pages": [],
             "type": None,
             },
-            ]
+            ],
+        "preprocess_info" : {
+            "new_width": None,
+            "new_height": None,
+            "rotation_angle": None,
+            "orientation": {
+                "predicted_class": None,
+                "score": None,
+                },
+            # "ext": None,
+        }
         }
 
     def extract_discharge_paper_info(self, cv2_img):
         process_img = cv2_img.copy()
-        process_img = self.preprocessImage(process_img)
         det_ocr_result = self.lineDetAndOCR.begin_recognize_text(process_img)
         kie_df = self.kieGCN(det_ocr_result, process_img)
         return kie_df
@@ -146,8 +154,8 @@ class E2E_OCR_Engine():
             # print("age:", age)
 
             admissiion_dates, admissiion_dates_scores = self.kiePostprocess.admission_date_postprocess()
-            for each in admissiion_dates:
-                print("admissiion_date:", each)
+            # for each in admissiion_dates:
+            #     print("admissiion_date:", each)
 
             discharge_dates, discharge_dates_scores = self.kiePostprocess.discharge_date_postprocess()
             # for each in discharge_dates:
