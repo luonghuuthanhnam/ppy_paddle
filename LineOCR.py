@@ -221,10 +221,10 @@ class ProcessImage():
         lines = self.detect_lines(img)
         s_time = time.time()
         extracted_dict = self.extract_lines(lines,img)
-        print("extracted_line time:", time.time() - s_time)
+        print("extracted_line time:", round(time.time() - s_time, 3))
         r_time = time.time()
         extracted_dict = self.recognize_text(extracted_dict)
-        print("ocr_line time:", time.time() - r_time)
+        print("ocr_line time:", round(time.time() - r_time, 3))
         return extracted_dict
 
     def individual_OCR(self, pil_line_img):

@@ -9,6 +9,7 @@ from kie_gcn import InvoiceGCN
 import postprocess
 import gc
 import copy
+import time
 
 # preprocessImage = preprocess_img.PreprocessImage()
 # lineDetAndOCR = LineOCR.ProcessImage()
@@ -167,6 +168,9 @@ class E2E_OCR_Engine():
             # for each in sign_dates:
                 # print("sign_date:", each)
 
+            if discharge_dates == None and len(sign_dates)> 0:
+                discharge_dates = sign_dates[0]
+                discharge_dates_scores = sign_dates_scores[0]
 
             ICD_codes = self.kiePostprocess.ICD_code_postprocess()
             # print("ICD_codes:", ICD_codes)

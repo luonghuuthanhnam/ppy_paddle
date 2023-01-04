@@ -674,5 +674,14 @@ class KiePostProcess():
                 new_string_date = f"{d}/{m}/{y}"
                 discharge_dates_out = new_string_date
                 discharge_dates_scores_out = discharge_dates_scores
+        
+        
+        if admission_dates_out!= None and "-1" in admission_dates_out:
+            admission_dates_out = None
+            admission_dates_scores_out = None
+        if discharge_dates_out != None and "-1" in discharge_dates_out:
+            discharge_dates_out = None
+            discharge_dates_scores_out = None
+            
         return admission_dates_out, admission_dates_scores_out, discharge_dates_out, discharge_dates_scores_out
             
