@@ -34,24 +34,7 @@ class E2E_OCR_Engine():
                                         PhoBERT_trained_state_dict_path="weights/nlp/phoBert_trained_state_dict/phoBert_state_dict_221117.pth",
                                         gcn_state_dict_path=gcn_state_dict_path)
         self.kiePostprocess = postprocess.KiePostProcess()
-        # self.empty_extracted_result = {
-        #     "hospital_name": None,
-        #     "hospital_name_score": -1,
-        #     "patient_name": None,
-        #     "patient_name_score": -1,
-        #     "age": None,
-        #     "age_score": -1,
-        #     "gender": None,
-        #     "gender_score": -1,
-        #     "admissiion_date": [],
-        #     "admissiion_date_score": [],
-        #     "discharge_date": [],
-        #     "discharge_date_score": [],
-        #     "sign_date": [],
-        #     "sign_date_score": [],
-        #     "icd-10": [],
-        # }
-        
+
         self.empty_extracted_result = {
         "data": [
             {
@@ -99,6 +82,10 @@ class E2E_OCR_Engine():
                 "score": None,
                 },
             # "ext": None,
+            },
+        "inference_status": {
+            "is_success": True,
+            "error_message": None,
         }
         }
 

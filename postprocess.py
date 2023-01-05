@@ -466,9 +466,22 @@ class KiePostProcess():
         extracted_patient_names, extraced_scores =  self.get_raw_predicted("patient_name", self.predicted_kie_df)
         patient_name = None
         extraced_score = 0
+        except_list = [
+            "trung tam",
+            "benh vien",
+            "phong kham",
+            "giay ra vien",
+            "hoa don",
+            "da khoa",
+        ]
         if len(extracted_patient_names)>0:
-            patient_name = self.patient_name_regularization(extracted_patient_names[0])
-            extraced_score = extraced_scores[0]
+            for each_patient_name, each_extraced_scores in zip(extracted_patient_names, extraced_scores):
+                decoded_each_patient_name = unidecode.unidecode(each_patient_name)
+                is_name = not bool(sum([True for each in except_list if each in decoded_each_patient_name.lower()]))
+                if is_name == True:
+                    patient_name = self.patient_name_regularization(each_patient_name)
+                    extraced_score = each_extraced_scores
+                    break
         patient_name = self.patient_family_name_correction(patient_name)
         return patient_name, extraced_score
 

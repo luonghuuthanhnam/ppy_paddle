@@ -14,6 +14,7 @@ import gc
 from pydantic import BaseModel
 import preprocess_img
 from fastapi import FastAPI
+from utils import logging
 
 class FileName(BaseModel):
     file_name: str
@@ -63,27 +64,55 @@ def read_root():
 
 @app.post("/OCR/DischargePaper/")
 async def ocr_handeler(data: FileName):
-    print("file_name:", data.file_name)
     start_time = time.time()
-    file_name = data.file_name
-    bucket_name = data.bucket_name
-    result = extract_discharge_paper(file_name, bucket_name)
-    print("TOTAL PROCESSING TIME:", round(time.time()-start_time, 3))
+    try:
+        logging(f"[{data.file_name}]\t Receive request: file_name:{data.file_name}, bucket_name:{data.bucket_name}")
+        print("file_name:", data.file_name)
+        file_name = data.file_name
+        bucket_name = data.bucket_name
+        result = extract_discharge_paper(file_name, bucket_name)
+        logging(f"[{data.file_name}]\t Inference_status: Success")
+        logging(f"[{data.file_name}]\t Running_time: {round(time.time()-start_time, 3)}")
+        print("TOTAL PROCESSING TIME:", round(time.time()-start_time, 3))
+    except Exception as e:
+        logging(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
+        logging(f"[{data.file_name}]\t Running_time: {round(time.time()-start_time, 3)}")
+        print(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
+        result = {
+            "inference_status": {
+                "is_success": False,
+                "error_message": e,
+            }
+        }
     return result
 
 @app.post("/OCR/DischargePaper/Dev")
 async def ocr_handeler(data: FileName):
-    print("file_name:", data.file_name)
     start_time = time.time()
-    file_name = data.file_name
-    bucket_name = data.bucket_name
-    result, extracted_df = extract_discharge_paper(file_name, bucket_name, return_df=True)
-    extracted_dict = extracted_df.to_dict()
-    total_result = {
-        "result":result,
-        "extracted_dict":extracted_dict
-    }
-    print("TOTAL PROCESSING TIME:", round(time.time()-start_time, 3))
+    try:
+        logging(f"[{data.file_name}]\t Receive request: file_name:{data.file_name}, bucket_name:{data.bucket_name}")
+        print("file_name:", data.file_name)
+        file_name = data.file_name
+        bucket_name = data.bucket_name
+        result, extracted_df = extract_discharge_paper(file_name, bucket_name, return_df=True)
+        extracted_dict = extracted_df.to_dict()
+        total_result = {
+            "result":result,
+            "extracted_dict":extracted_dict
+        }
+        logging(f"[{data.file_name}]\t Inference_status: Success")
+        logging(f"[{data.file_name}]\t Running_time: {round(time.time()-start_time, 3)}")
+        print("TOTAL PROCESSING TIME:", round(time.time()-start_time, 3))
+    except Exception as e:
+        logging(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
+        logging(f"[{data.file_name}]\t Running_time: {round(time.time()-start_time, 3)}")
+        print(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
+        total_result = {
+            "inference_status": {
+                "is_success": False,
+                "error_message": e,
+            }
+        }
     return total_result
 
 # https://drive.google.com/file/d/1QDxM_TSRI8GXwPpkY-vn_wrBK1ywC9fn/view?usp=share_link
