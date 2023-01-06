@@ -14,7 +14,7 @@ import gc
 from pydantic import BaseModel
 import preprocess_img
 from fastapi import FastAPI
-from utils import logging
+from utils import logging, handle_exception
 
 class FileName(BaseModel):
     file_name: str
@@ -67,7 +67,7 @@ async def ocr_handeler(data: FileName):
     start_time = time.time()
     try:
         logging(f"[{data.file_name}]\t Receive request: file_name:{data.file_name}, bucket_name:{data.bucket_name}")
-        print("file_name:", data.file_name)
+        # print("file_name:", data.file_name)
         file_name = data.file_name
         bucket_name = data.bucket_name
         result = extract_discharge_paper(file_name, bucket_name)
@@ -78,12 +78,7 @@ async def ocr_handeler(data: FileName):
         logging(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
         logging(f"[{data.file_name}]\t Running_time: {round(time.time()-start_time, 3)}")
         print(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
-        result = {
-            "inference_status": {
-                "is_success": False,
-                "error_message": e,
-            }
-        }
+        result = handle_exception(e)
     return result
 
 @app.post("/OCR/DischargePaper/Dev")
@@ -107,12 +102,7 @@ async def ocr_handeler(data: FileName):
         logging(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
         logging(f"[{data.file_name}]\t Running_time: {round(time.time()-start_time, 3)}")
         print(f"[{data.file_name}]\t Inference_status: Fail | detail: {e}")
-        total_result = {
-            "inference_status": {
-                "is_success": False,
-                "error_message": e,
-            }
-        }
+        total_result = handle_exception(e)
     return total_result
 
 # https://drive.google.com/file/d/1QDxM_TSRI8GXwPpkY-vn_wrBK1ywC9fn/view?usp=share_link

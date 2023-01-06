@@ -1,4 +1,5 @@
 __pycache__
 weights
 croped_for_ocr
-log_files
+log_files/
+temp_data/

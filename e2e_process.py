@@ -83,10 +83,8 @@ class E2E_OCR_Engine():
                 },
             # "ext": None,
             },
-        "inference_status": {
-            "is_success": True,
-            "error_message": None,
-        }
+            "errorCode": "0",
+            "errorMessage": "Success",
         }
 
     def extract_discharge_paper_info(self, cv2_img):
