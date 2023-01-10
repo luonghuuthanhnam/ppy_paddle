@@ -66,7 +66,8 @@ class E2E_OCR_Engine():
                     
                     "icd_10": None,
 
-                    "image_seals": "UN_CHECKED",
+                    "valid_seals": True,
+                    "image_seals": None,
 
                 },
             "pages": [],
